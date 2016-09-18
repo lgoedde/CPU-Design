@@ -30,16 +30,22 @@ module datapath (
   control_unit_if cuif();
   pc_if pcif();
   register_file_if rfif();
-  request_if rqif();
 
-
+  //Pipeline interfaces
+  IF_ID_if ifid();
+  ID_EX_if idex();
+  EX_M_if exm();
+  M_WB_if mwb();
 
   //build parts
   alu ALU(aluif.alu);
   control_unit CU(CLK, nRST, cuif.cu);
   pc PCOUNT(CLK, nRST, pcif.pc);
   register_file REGF(CLK, nRST, rfif.rf);
-  request REQ(CLK, nRST, rqif.rq);
+  IF_ID IFID(ifid.if_id);
+  ID_EX EDEX(idex.if_ex);
+  EX_M EXM(exm.ex_m);
+  M_WB MWB(mwb.mw_b);
 
   // pc init
   parameter PC_INIT = 0;
@@ -149,11 +155,5 @@ module datapath (
     else if(cuif.RegDest == 2'b10)
       rfif.wsel = 5'b11111;
   end
-
-  //Request unit
-  assign rqif.ihit = dpif.ihit;
-  assign rqif.dhit = dpif.dhit;
-  assign rqif.dwen = cuif.dWEN;
-  assign rqif.dren = cuif.dREN;
 
 endmodule
