@@ -32,6 +32,8 @@ module datapath (
   register_file_if rfif();
   request_if rqif();
 
+
+
   //build parts
   alu ALU(aluif.alu);
   control_unit CU(CLK, nRST, cuif.cu);
