@@ -1,60 +1,58 @@
-`ifndef ID_EX_IF
-`define ID_EX_IF
+`ifndef ID_EX_IF_VH
+`define ID_EX_IF_VH
 
 // all types
 `include "cpu_types_pkg.vh"
 
-interface ID_Ex_if;
+interface ID_EX_if;
   // import types
   import cpu_types_pkg::*;
 
   //Inputs
   logic dREN;
   logic dWEN;
-  logic [1:0] BType;
-  logic BNE;
-  logic PCSrc;
-  aluop_t aluop;
-  regbits_t shamt;
-  logic WEN;
-  logic [1:0] InstrType;
-  logic [1:0] RegDst;
-  logic [1:0] MemtoReg;
-  regbits_t Rd;
-  regbits_t Rt;
-  word_t ExtImm;
+  logic branchSel;
+  logic branch;
+  logic PCSel;
+  aluop_t ALUop;
+  logic regWrite;
+  logic wDataSrc;
+  logic aluSrc;
+  logic MemtoReg;
+  word_t Imm;
+  regbits_t wsel;
   logic [25:0] JumpAddr;
   word_t pcp4;
   word_t rdat1;
   word_t rdat2;
   logic iHit;
   logic flush;
+  logic HALT;
 
   //Outputs
   logic dREN_out;
   logic dWEN_out;
-  logic [1:0] JumpSel;
-  logic BNE_out;
-  logic PCSrc_out;
-  aluop_t aluop_out;
-  regbits_t shamt_out;
-  logic WEN_out;
-  logic [1:0] InstrType_out;
-  logic [1:0] RegDst_out;
-  logic [1:0] MemtoReg_out;
-  regbits_t Rd_out;
-  regbits_t Rt_out;
-  word_t ExtImm_out;
+  logic branchSel_out;
+  logic branch_out;
+  logic PCSel_out;
+  aluop_t ALUop_out;
+  logic regWrite_out;
+  logic wDataSrc_out;
+  logic aluSrc_out;
+  logic MemtoReg_out;
+  word_t Imm_out;
+  regbits_t wsel_out;
   logic [25:0] JumpAddr_out;
   word_t pcp4_out;
   word_t rdat1_out;
   word_t rdat2_out;
+  logic HALT_out;
 
   modport id_ex (
-    input dREN,dWEN,BType,BNE,PCSrc,aluop,shamt,WEN,InstrType,RegDst,
-    MemtoReg,Rd,Rt,ExtImm,JumpAddr,pcp4,rdat1,rdat2,iHit,flush
-  	output dREN_out,dWEN_out,JumpSel,BNE_out,PCSrc_out,aluop_out,shamt_out,WEN_out,InstrType_out,RegDst_out,
-    MemtoReg_out,Rd_out,Rt_out,ExtImm_out,JumpAddr_out,pcp4_out,rdat1_out,rdat2_out
+    input dREN,dWEN,branchSel,branch,PCSel,ALUop,regWrite,wDataSrc,aluSrc,
+          MemtoReg,Imm,wsel,JumpAddr,pcp4,rdat1,rdat2,iHit,flush,HALT,
+    output dREN_out,dWEN_out,branchSel_out,branch_out,PCSel_out,ALUop_out,regWrite_out,wDataSrc_out,aluSrc_out,
+          MemtoReg_out,Imm_out,wsel_out,JumpAddr_out,pcp4_out,rdat1_out,rdat2_out,HALT_out
   	);
   
 endinterface 

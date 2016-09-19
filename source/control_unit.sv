@@ -1,558 +1,334 @@
-`include "cpu_types_pkg.vh"
 `include "control_unit_if.vh"
+`include "cpu_types_pkg.vh"
 
 module control_unit (
-	input CLK, nRST, 
-	control_unit_if.cu cuif
-);	
-	import cpu_types_pkg::*;
-	
-	opcode_t opcode;
-	funct_t func;
-	assign opcode = opcode_t'(cuif.instr[31:26]); //get the opcode
+  control_unit_if.cu cuif
+);
 
-	assign cuif.Rs = cuif.instr[25:21]; 
-	assign cuif.Rt = cuif.instr[20:16];
-	assign cuif.Rd = cuif.instr[15:11];
+import cpu_types_pkg::*;
 
-	assign cuif.shamt[31:6] = '0; //zero extend it
-	assign cuif.shamt[5:0] = cuif.instr[10:6];
+j_t jtypeInstr;
+i_t itypeInstr;
+r_t rtypeInstr;
 
-	assign func = funct_t'(cuif.instr[5:0]);
-	assign cuif.Imm = cuif.instr[15:0];
-	
-	always_comb
-	begin
-		cuif.imemREN = 1;
-		casez(opcode)
-			RTYPE:
-			begin
-				casez(func)
-				SLL:
-				begin
-					cuif.RegDest = 2'b00; //going to Rd
-					cuif.RegorMem = 0; //alu not mem
-					cuif.WEN = 1; //writing to the reg
-					cuif.JAL = 0; //doesn't matter
-					cuif.LUI = 0; //not doing lui
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SLL; //shift left
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b01; //shamt
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care	
-					cuif.HALT = 0; //not halting
+word_t signExtendImm;
+word_t zeroExtendImm;
+
+opcode_t opcode;
+funct_t funct;
+ 
+assign opcode = rtypeInstr.opcode;
+assign funct = rtypeInstr.funct;
+
+assign signExtendImm = itypeInstr.imm[15] == 1 ? {16'hFFFF,itypeInstr.imm} : {16'b0,itypeInstr.imm};
+assign zeroExtendImm = {16'b0, itypeInstr.imm};
+
+assign jtypeInstr = cuif.instr;
+assign itypeInstr = cuif.instr;
+assign rtypeInstr = cuif.instr;
+
+always_comb
+begin
+	cuif.halt = 0;
+	cuif.dREN = 0;
+	cuif.dWEN = 0;
+	cuif.PCSel = 2'b11; // 00 for j type, 01 for branch mux, 10 for op1 from alu
+	cuif.branch = 0; //immediate value shifted by 2 added with npc is next pc
+	cuif.branchSel = 0; // 1 for bne, 0 for beq
+	cuif.memtoReg = 0; // high when you want to write the dcach value to register file
+	cuif.aluSrc = 0;
+	cuif.ALUop = ALU_SLL;
+	cuif.rsel1 = 0;
+	cuif.rsel2 = 0;
+	cuif.wsel = 0;
+	cuif.immediate = 0;
+	cuif.regWrite = 1;
+	cuif.wdataSrc = 0; // 1 when w data is npc
+	// aluSrc is 1 when immediate value is loaded into op2 of alu
+			
+	casez(cuif.instr[31:26]) 
+		RTYPE : begin
+			casez(rtypeInstr.funct) 
+				SLL : begin
+					cuif.aluSrc = 1;
+					cuif.ALUop = ALU_SLL;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = 0;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = rtypeInstr.shamt;
 				end
-				SRL:
-				begin
-					cuif.RegDest = 2'b00; //going to Rd
-					cuif.RegorMem = 0; //alu not mem
-					cuif.WEN = 1; //writing to the reg
-					cuif.JAL = 0; //doesn't matter
-					cuif.LUI = 0; //not doing lui
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SRL; //shift right
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b01; //shamt
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care	
-					cuif.HALT = 0; //not halting
+				SRL : begin
+					cuif.aluSrc = 1;
+					cuif.ALUop = ALU_SRL;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = 0;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = rtypeInstr.shamt;
 				end
-				JR:
-				begin
-					cuif.RegDest = 2'b00; //don't care
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 0; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b11; //we want port_a 
-					cuif.ALUOP = ALU_ADD; //don't care
-					cuif.PCSrc = 0; //don't care
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //doesn't matter
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting	
+				JR : begin
+					cuif.regWrite = 0;
+					cuif.PCSel = 2'b10;
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SLL;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = 0;
+					cuif.wsel = 0;
+					cuif.immediate = 0;
 				end
-				ADD:
-				begin	
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_ADD; //add
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				ADD : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_ADD;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				SUB:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SUB; //sub
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				ADDU : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_ADD;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				ADDU:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_ADD; //addu
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				SUB : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SUB;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				SUBU:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SUB; //subu
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				SUBU : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SUB;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				AND:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_AND; //and
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				AND : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_AND;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				OR:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_OR; //or
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				OR : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_OR;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				XOR:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_XOR; //xor
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				XOR : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_XOR;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				NOR:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_NOR; //nor
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				NOR : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_NOR;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				SLT:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SLT; //slt
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				SLT : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SLT;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				SLTU:
-				begin
-					cuif.RegDest = 2'b00; //Rd
-					cuif.RegorMem = 0; //don't care
-					cuif.WEN = 1; //not writing to the reg
-					cuif.JAL = 0; //don't care
-					cuif.LUI = 0; //don't care
-					cuif.BType = 2'b00; //pc+4
-					cuif.ALUOP = ALU_SLTU; //sltu
-					cuif.PCSrc = 0; //not doing a branch instr
-					cuif.ExtOP = 0; //doesn't matter
-					cuif.dREN = 0; //doesn't matter
-					cuif.dWEN = 0; //doesn't matter
-					cuif.InstrType = 2'b00; //port b
-					cuif.imemREN = 1; //almost always gonna be 1
-					cuif.BNE = 0; //don't care
-					cuif.HALT = 0; //not halting
+				SLTU : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SLTU;
+					cuif.rsel1 = rtypeInstr.rs;
+					cuif.rsel2 = rtypeInstr.rt;
+					cuif.wsel = rtypeInstr.rd;
+					cuif.immediate = 0;
 				end
-				endcase
-			end  
-			J:
-			begin
-				cuif.RegDest = 2'b00; //doesn't matter
-				cuif.RegorMem = 0; //doesn't matter
-				cuif.WEN = 0; //not writing to the reg
-				cuif.JAL = 0; //doesn't matter
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b01; //jumping
-				cuif.ALUOP = ALU_OR; //doesn't matter
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 0; //doesn't matter
-				cuif.dREN = 0; //doesn't matter
-				cuif.dWEN = 0; //doesn't matter
-				cuif.InstrType = 2'b00; //doesn't matter
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end      
-			JAL:
-			begin
-				cuif.RegDest = 2'b10; //going to reg $31
-				cuif.RegorMem = 0; //doesn't matter
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 1; //doing a jal 
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b01; //jumping
-				cuif.ALUOP = ALU_OR; //doesn't matter
-				cuif.PCSrc = 0; //don't care
-				cuif.ExtOP = 0; //doesn't matter
-				cuif.dREN = 0; //doesn't matter
-				cuif.dWEN = 0; //doesn't matter
-				cuif.InstrType = 2'b00; //doesn't matter
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end    
-			BEQ:
-			begin
-				cuif.RegDest = 2'b00; //doesn't matter
-				cuif.RegorMem = 0; //doesn't matter
-				cuif.WEN = 0; //writing to the reg
-				cuif.JAL = 0; //doing a jal 
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b10; //branching
-				cuif.ALUOP = ALU_SUB; //doesn't matter
-				cuif.PCSrc = 1; //doing a branch
-				cuif.ExtOP = 1; //needs to be signed
-				cuif.dREN = 0; //doesn't matter
-				cuif.dWEN = 0; //doesn't matter
-				cuif.InstrType = 2'b00; //doesn't matter
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end    
-			BNE:
-			begin 
-				cuif.RegDest = 2'b00; //doesn't matter
-				cuif.RegorMem = 0; //doesn't matter
-				cuif.WEN = 0; //writing to the reg
-				cuif.JAL = 0; //doing a jal 
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b10; //branching
-				cuif.ALUOP = ALU_SUB; //doesn't matter
-				cuif.PCSrc = 1; //doing a branch
-				cuif.ExtOP = 1; //needs to be signed
-				cuif.dREN = 0; //doesn't matter
-				cuif.dWEN = 0; //doesn't matter
-				cuif.InstrType = 2'b00; //doesn't matter
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 1; //doing a BNE
-				cuif.HALT = 0; //not halting
-			end    
-			ADDI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //need to do a signed extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end   
-			ADDIU:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //need to do a signed extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end  
-			SLTI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_SLT;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //signed extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end   
-			SLTIU:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_SLTU;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //signed extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end  
-			ANDI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_AND;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 0; //unsigned extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end   
-			ORI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_OR;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 0; //unsigned extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end    
-			XORI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //coming from the ALU
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_XOR;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 0; //unsigned extension
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end   
-			LUI:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //don't care
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 1; //def doing a lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_OR; //this is a don't care
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 0; //don't care
-				cuif.dREN = 0; //immediate instr, don't need mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //don't care
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end    
-			LW:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 1; //coming from the mem
-				cuif.WEN = 1; //writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //signed extension
-				cuif.dREN = 1; //reading from mem
-				cuif.dWEN = 0;
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end     
-			SW:
-			begin
-				cuif.RegDest = 2'b01; //want to select Rt
-				cuif.RegorMem = 0; //not coming from mem
-				cuif.WEN = 0; //not writing to the reg
-				cuif.JAL = 0; //not jaling
-				cuif.LUI = 0; //not doing lui
-				cuif.BType = 2'b00; //just doing pc+4
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; //not doing a branch instr
-				cuif.ExtOP = 1; //signed extension
-				cuif.dREN = 0; 
-				cuif.dWEN = 1; //writing to mem
-				cuif.InstrType = 2'b10; //selecting imm field 
-				cuif.imemREN = 1; //almost always gonna be 1
-				cuif.BNE = 0; //don't care
-				cuif.HALT = 0; //not halting
-			end         
-			HALT:
-			begin
-				//EVERYTHING is set low/off because we are halting
-				cuif.RegDest = 2'b00; 
-				cuif.RegorMem = 0; 
-				cuif.WEN = 0; 
-				cuif.JAL = 0; 
-				cuif.LUI = 0; 
-				cuif.BType = 2'b00; 
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; 
-				cuif.ExtOP = 0; 
-				cuif.dREN = 0; 
-				cuif.dWEN = 0; 
-				cuif.InstrType = 2'b00; 
-				cuif.imemREN = 1; 
-				cuif.BNE = 0; 
-				cuif.HALT = 1; //halting
-			end 
-			default:
-			begin
-				cuif.RegDest = 2'b00; 
-				cuif.RegorMem = 0; 
-				cuif.WEN = 0; 
-				cuif.JAL = 0; 
-				cuif.LUI = 0; 
-				cuif.BType = 2'b00; 
-				cuif.ALUOP = ALU_ADD;
-				cuif.PCSrc = 0; 
-				cuif.ExtOP = 0; 
-				cuif.dREN = 0; 
-				cuif.dWEN = 0; 
-				cuif.InstrType = 2'b00; 
-				cuif.imemREN = 1;  
-				cuif.BNE = 0;
-				cuif.HALT = 0; //so it doesn't halt immediately
-			end  
-		endcase
-	end
-endmodule // control unit
+				default : begin
+					cuif.aluSrc = 0;
+					cuif.ALUop = ALU_SLL;
+					cuif.rsel1 = 0;
+					cuif.rsel2 = 0;
+					cuif.wsel = 0;
+					cuif.immediate = 0;
+					cuif.regWrite = 0;
+				end
+			endcase
+		end
+		//j-type
+		J : begin
+			cuif.PCSel = 2'b0;
+			cuif.regWrite = 0;
+			cuif.aluSrc = 0;
+			cuif.ALUop = ALU_SUB;
+			cuif.rsel1 = 0;
+			cuif.rsel2 = 0;
+			cuif.wsel = 0;
+			cuif.immediate = 0;
+		end
+		JAL : begin
+			cuif.PCSel = 2'b0;
+			cuif.wdataSrc = 1;
+			cuif.regWrite = 1;
+			cuif.aluSrc = 0;
+			cuif.ALUop = ALU_SUB;
+			cuif.rsel1 = 0;
+			cuif.rsel2 = 0;
+			cuif.wsel = 31;
+			cuif.immediate = 0;
+		end
+		//i-type
+		BEQ : begin
+			cuif.regWrite = 0;
+			cuif.branch = 1;
+			cuif.branchSel = 0;
+			cuif.PCSel = 2'b01;
+			cuif.aluSrc = 0;
+			cuif.ALUop = ALU_SUB;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = itypeInstr.rt;
+			cuif.wsel = 0;
+			cuif.immediate = zeroExtendImm;
+		end
+		BNE : begin
+			cuif.regWrite = 0;
+			cuif.branch = 1;
+			cuif.branchSel = 1;
+			cuif.PCSel = 2'b01;
+			cuif.aluSrc = 0;
+			cuif.ALUop = ALU_SUB;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = itypeInstr.rt;
+			cuif.wsel = 0;
+			cuif.immediate = zeroExtendImm;
+		end
+		ADDI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
+		end
+		ADDIU : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
+		end
+		SLTI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_SLT;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
+		end
+		SLTIU : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_SLTU;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
+		end
+		ANDI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_AND;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = zeroExtendImm;
+		end
+		ORI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_OR;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = zeroExtendImm;
+		end
+		XORI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_XOR;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = zeroExtendImm;
+		end
+		LUI : begin
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = 0;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = {itypeInstr.imm,16'b0};
+		end
+		LW : begin
+			cuif.dREN = 1;
+			cuif.memtoReg = 1;
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
+		end
+		LBU : begin
+
+		end
+		LHU : begin
+
+		end
+		SB : begin
+
+		end
+		SH : begin
+
+		end
+		SW : begin
+			cuif.dWEN = 1;
+			cuif.memtoReg = 1;
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = itypeInstr.rt;
+			cuif.wsel = 0;
+			cuif.immediate = signExtendImm;
+		end
+		LL : begin
+
+		end
+		SC : begin
+
+		end
+		HALT : begin
+			cuif.halt = 1;
+		end
+		default : begin
+			cuif.aluSrc = 0;
+			cuif.ALUop = ALU_SLL;
+			cuif.rsel1 = 0;
+			cuif.rsel2 = 0;
+			cuif.wsel = 0;
+			cuif.immediate = 0;
+			cuif.regWrite = 0;
+		end
+	endcase
+
+
+end
+endmodule // control_unit

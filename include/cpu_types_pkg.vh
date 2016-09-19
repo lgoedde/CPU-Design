@@ -6,6 +6,7 @@
 */
 `ifndef CPU_TYPES_PKG_VH
 `define CPU_TYPES_PKG_VH
+
 package cpu_types_pkg;
 
   // word width and size

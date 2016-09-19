@@ -1,3 +1,8 @@
+/*
+  Michael Baio
+  mbaio@purdue.edu
+
+*/
 `ifndef CONTROL_UNIT_IF_VH
 `define CONTROL_UNIT_IF_VH
 
@@ -8,23 +13,34 @@ interface control_unit_if;
   // import types
   import cpu_types_pkg::*;
 
-  logic JAL, RegorMem, WEN, ExtOP, PCSrc, dREN, dWEN, LUI, imemREN, BNE, HALT;
-  aluop_t ALUOP;
-  regbits_t Rd, Rs, Rt;
-  word_t instr, shamt;
-  logic[1:0] InstrType, RegDest, BType;
-  logic[15:0] Imm;
+  // Inputs
+  word_t instr;  
 
+  // Outputs
+  logic   dREN;   //To request unit
+  logic   dWEN;   //To request unit
+  logic   halt;   //To request unit
+  logic [1:0] PCSel;  //2 bit selector for value loaded in next pc
+  logic   branch;     //if branching or not
+  logic   branchSel;  //Look at zero flag or inverse zero flag
+  logic   memtoReg;   //1 if register file stores from cache
+  logic   aluSrc;     //1 if using immedate for second operand
+  aluop_t ALUop;   
+  regbits_t rsel1;
+  regbits_t rsel2;
+  regbits_t wsel; 
+  word_t immediate; 
+  logic regWrite;
+  logic wdataSrc;
+
+
+  // datapath ports
   modport cu (
-  	input instr,
-    output JAL, ALUOP, RegorMem, WEN, ExtOP, PCSrc, dREN, dWEN, LUI, imemREN, Rd, Rs, Rt, shamt, InstrType, RegDest, BType, Imm, BNE, HALT
-  	);
+    input   instr,
+    output  dREN,dWEN,halt,PCSel,branch,branchSel,memtoReg,
+            aluSrc,ALUop,rsel1,rsel2,wsel,regWrite,immediate, wdataSrc
+  );
 
-  modport tb (
-    input JAL, ALUOP, RegorMem, WEN, ExtOP, PCSrc, dREN, dWEN, LUI, imemREN, Rd, Rs, Rt, shamt, InstrType, RegDest, BType, Imm, BNE, HALT,
-    output instr
-  	);
+endinterface
 
-endinterface 
-
-`endif
+`endif 

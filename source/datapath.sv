@@ -39,121 +39,123 @@ module datapath (
 
   //build parts
   alu ALU(aluif.alu);
-  control_unit CU(CLK, nRST, cuif.cu);
+  control_unit CU(cuif.cu);
   pc PCOUNT(CLK, nRST, pcif.pc);
   register_file REGF(CLK, nRST, rfif.rf);
-  IF_ID IFID(ifid.if_id);
-  ID_EX EDEX(idex.if_ex);
-  EX_M EXM(exm.ex_m);
-  M_WB MWB(mwb.mw_b);
+  IF_ID IFID(CLK,nRST,ifid.if_id);
+  ID_EX IDEX(CLK,nRST,idex.id_ex);
+  EX_M EXM(CLK,nRST,exm.ex_m);
+  M_WB MWB(CLK,nRST,mwb.m_wb);
 
-  // pc init
+
+  //VARIABLES
+  word_t jump_address;
+  word_t branch_address;
+  logic branchMux;
+
+
+  /******* INSTRUCTION FETCH *********/
+
+  //Program Counter
   parameter PC_INIT = 0;
-  word_t pcp4, signext, zeroext, rmtemp, luitemp;
-  logic bne_out, and_out;
-  assign pcp4 = pcif.pc_out + 4;
   
+  //program counter
+  assign pcif.pcen = dpif.ihit;
+  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
+  assign dpif.imemaddr = pcif.pc_out;
 
-  //extender block
-  assign signext[15:0] = cuif.Imm;
-  assign signext[31:16] = cuif.Imm[15] ? '1 :'0;
-  assign zeroext[31:16] = '0;
-  assign zeroext[15:0] = cuif.Imm;
+  //Interface
+  assign ifid.imemload = dpif.imemload;
+  assign ifid.pcp4 = pcif.pc_out + 4;
+  assign ifid.iHit = dpif.ihit;
+  assign ifid.flush = 0; //FIX WHEN BRANCHING
 
-  //Alu
-  assign aluif.alu_op = cuif.ALUOP;
-  assign aluif.port_a = rfif.rdat1;
-  always_comb
-  begin
-    aluif.port_b = '0; //need a default
-    if(cuif.InstrType == 2'b00)
-      aluif.port_b = rfif.rdat2;
-    else if(cuif.InstrType == 2'b01)
-      aluif.port_b = cuif.shamt;
-    else if(cuif.InstrType == 2'b10)
-    begin
-      if(cuif.ExtOP == 0)
-        aluif.port_b = zeroext;
-      else if(cuif.ExtOP == 1)
-        aluif.port_b = signext;
-    end
-  end
+  /******* INSTRUCTION DECODE *********/
 
   //Control unit
-  assign cuif.instr = dpif.imemload;
+  assign cuif.instr = ifid.instr;
 
-  //Datapath
-  always_ff @(posedge CLK, negedge nRST) 
-  begin
-    if(~nRST) 
-    begin
-       dpif.halt <= 0;
-    end 
-    else 
-    begin
-       dpif.halt <= cuif.HALT;
-    end
-  end
-  //assign dpif.halt = cuif.HALT;
-  assign dpif.imemREN = cuif.imemREN;
-  assign dpif.imemaddr = pcif.pc_out;
-  assign dpif.dmemREN = rqif.dmemren;
-  assign dpif.dmemWEN = rqif.dmemwen;
-  //assign dpif.datomic = ?
-  assign dpif.dmemstore = rfif.rdat2;
-  assign dpif.dmemaddr = aluif.out;
+  //Register File
+  assign rfif.rsel1 = cuif.rsel1;
+  assign rfif.rsel2 = cuif.rsel2;
+  assign rfif.WEN = mwb.RegWEN_out && (dpif.ihit || dpif.dhit);
+  assign rfif.wsel = mwb.Wsel_out;
 
-  //program counter
-  assign pcif.pcen = rqif.pcen;
-  always_comb
-  begin
-    pcif.pc_next = '0; //try not to have a latch
-    bne_out = 0;
-    and_out = 0;
-    if(cuif.BType == 2'b00)
-      pcif.pc_next = pcp4;
-    else if(cuif.BType == 2'b01)
-    begin  
-      pcif.pc_next = {pcp4[31:28], cuif.instr[25:0], 2'b00}; 
-    end
-    else if(cuif.BType == 2'b10)
-    begin
-      if(cuif.BNE == 0)
-        bne_out = aluif.ZERO;
-      else if(cuif.BNE == 1)
-        bne_out = ~aluif.ZERO;
+  //Interface
+  assign idex.dREN = cuif.dREN;
+  assign idex.dWEN = cuif.dWEN;
+  assign idex.branchSel = cuif.branchSel;
+  assign idex.branch = cuif.branch;
+  assign idex.PCSel = cuif.PCSel;
+  assign idex.ALUop = cuif.ALUop;
+  assign idex.regWrite = cuif.regWrite;
+  assign idex.wDataSrc = cuif.wdataSrc;
+  assign idex.aluSrc = cuif.aluSrc;
+  assign idex.MemtoReg = cuif.memtoReg;
+  assign idex.Imm = cuif.immediate;
+  assign idex.wsel = cuif.wsel;
+  assign idex.JumpAddr = ifid.instr[25:0];
+  assign idex.pcp4 = ifid.pcp4_out;
+  assign idex.rdat1 = rfif.rdat1;
+  assign idex.rdat2 = rfif.rdat2;
+  assign idex.iHit = dpif.ihit;
+  assign idex.flush = 0;
+  assign idex.HALT = cuif.halt;
 
-      and_out = bne_out && cuif.PCSrc;
 
-      if(and_out == 0)
-        pcif.pc_next = pcp4;
-      else if(and_out == 1)
-      begin
-        pcif.pc_next = (signext << 2) + pcp4;
-      end
-    end
-    else if(cuif.BType == 2'b11)
-      pcif.pc_next = rfif.rdat1;
-  end
+  /******* EXECUTE INSTRUCTION *********/
 
-  //Register file
-  assign rfif.rsel1 = cuif.Rs; //this was Rs
-  assign rfif.rsel2 = cuif.Rt; //this was Rt
-  assign rfif.WEN = cuif.WEN && (dpif.ihit == 1 && dpif.dhit == 0 || dpif.ihit == 0 && dpif.dhit == 1);
-  
-  assign rmtemp = cuif.RegorMem ? dpif.dmemload : aluif.out;
-  assign luitemp = cuif.LUI ? (zeroext << 16): rmtemp;
-  assign rfif.wdat = cuif.JAL ? pcp4 : luitemp;
+  // ALU
+  assign aluif.port_a = idex.rdat1_out;
+  assign aluif.port_b = idex.aluSrc == 1 ? idex.Imm_out : idex.rdat2_out; 
+  assign aluif.alu_op = idex.ALUop_out;
 
-  always_comb
-  begin
-    rfif.wsel = '0; //get rid of latches
-    if(cuif.RegDest == 2'b00)
-      rfif.wsel = cuif.Rd;
-    else if(cuif.RegDest == 2'b01)
-      rfif.wsel = cuif.Rt;
-    else if(cuif.RegDest == 2'b10)
-      rfif.wsel = 5'b11111;
-  end
+
+  assign jump_address = {idex.pcp4_out[31:28], idex.JumpAddr_out, 2'b0};
+  assign branchMux = idex.branchSel_out == 1 ? idex.branch_out && ~aluif.ZERO : idex.branch_out && aluif.ZERO;
+  assign branch_address = branchMux == 1 ? idex.pcp4_out + (idex.Imm_out << 2) : idex.pcp4_out;
+
+  //Interface
+  assign exm.dREN = idex.dREN_out;
+  assign exm.dWEN = idex.dWEN_out;
+  assign exm.rdat2 = idex.rdat2_out;
+  assign exm.MemtoReg = idex.MemtoReg_out;
+  assign exm.portO = aluif.out;
+  assign exm.WSel = idex.wsel_out;
+  assign exm.WEN = idex.regWrite_out;
+  assign exm.pcp4 = idex.pcp4_out;
+  assign exm.wdatasrc = idex.wDataSrc_out;
+  assign exm.iHit = dpif.ihit;
+  assign exm.dHit = dpif.dhit;
+  assign exm.flush = 0;
+  assign exm.HALT = idex.HALT_out;
+
+  /************** MEMORY ***************/
+  //To Cache
+  assign dpif.dmemREN = exm.dREN;
+  assign dpif.dmemWEN = exm.dWEN;
+  assign dpif.dmemstore = exm.dmemStore;
+  assign dpif.dmemaddr = exm.portO_out;
+
+  //Interface
+  assign mwb.dmemLoad = dpif.dmemload;
+  assign mwb.MemtoReg = exm.MemtoReg_out;
+  assign mwb.portO = exm.portO_out;
+  assign mwb.Wsel = exm.WSel_out;
+  assign mwb.RegWEN = exm.WEN_out;
+  assign mwb.pcp4 = exm.pcp4_out;
+  assign mwb.iHit = dpif.ihit;
+  assign mwb.dHit = dpif.dhit;
+  assign mwb.flush = 0;
+  assign mwb.HALT = exm.HALT_out;
+  assign mwb.wdatasrc = exm.wdatasrc_out;
+
+  /************ WRITE BACK *************/
+
+  assign rfif.wdat = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
+  assign dpif.halt = mwb.HALT_out;
+  assign dpif.imemREN = 1;
+
+
 
 endmodule

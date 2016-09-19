@@ -19,6 +19,8 @@ module caches (
   caches_if cif
 );
 
+  import cpu_types_pkg::*;
+
   word_t instr;
   word_t daddr;
 

@@ -3,35 +3,50 @@
 
 
 module EX_M (
+	input CLK,nRST,
   EX_M_if.ex_m exm
 );
 
   import cpu_types_pkg::*;
 
 
-  always_ff(posedge exm.iHit,exm.dHit)
+  always_ff @ (posedge CLK, negedge nRST)
   begin
-  	if (exm.flush == 1) begin
+  	if (exm.flush == 1 || !nRST) begin
 		exm.dREN_out <= 0;
 		exm.dWEN_out <= 0;
 		exm.dmemStore <= 0;
-		exm.LUI_out <= 0;
 		exm.MemtoReg_out <= 0;
+		exm.wdatasrc_out <= 0;
 		exm.portO_out <= 0;
 		exm.WSel_out <= 0;
 		exm.WEN_out <= 0;
 		exm.pcp4_out <= 0;
+		exm.HALT_out <= 0;
+		exm.opcode_out <= RTYPE;
+		exm.funct_out <= SLL;
   	end
-  	else begin
+  	else if (exm.iHit || exm.dHit) begin
+  		if(exm.dHit) begin
+			exm.dREN_out <= 0;
+			exm.dWEN_out <= 0;
+		end
+		else if(exm.iHit) begin
+			exm.dWEN_out <= exm.dWEN;
+			exm.dREN_out <= exm.dREN;
+		end
   		exm.dREN_out <= exm.dREN;
 		exm.dWEN_out <= exm.dWEN;
 		exm.dmemStore <= exm.rdat2;
-		exm.LUI_out <= exm.LUI;
 		exm.MemtoReg_out <= exm.MemtoReg;
+		exm.wdatasrc_out <= exm.wdatasrc;
 		exm.portO_out <= exm.portO;
 		exm.WSel_out <= exm.WSel;
 		exm.WEN_out <= exm.WEN;
 		exm.pcp4_out <= exm.pcp4;
+		exm.HALT_out <= exm.HALT;
+		exm.opcode_out <= exm.opcode;
+		exm.funct_out <= exm.funct;
   	end
   end
 endmodule // EX_M
