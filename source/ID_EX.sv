@@ -12,7 +12,7 @@ module ID_EX (
 
   always_ff @ (posedge CLK, negedge nRST)
   begin
-  	if (idex.flush == 1 || nRST == 0) begin
+  	if (nRST == 0) begin
   		idex.dREN_out <= 0;
   		idex.dWEN_out <= 0;
   		idex.branchSel_out <= 0;
@@ -33,6 +33,27 @@ module ID_EX (
       idex.opcode_out <= RTYPE;
       idex.funct_out <= SLL;
   	end
+    else if(idex.flush == 1) begin
+      idex.dREN_out <= 0;
+      idex.dWEN_out <= 0;
+      idex.branchSel_out <= 0;
+      idex.branch_out <= 0;
+      idex.PCSel_out <= 2'b11;
+      idex.ALUop_out <= ALU_SLL;
+      idex.regWrite_out <= 0;
+      idex.wDataSrc_out <= 0;
+      idex.aluSrc_out <= 0;
+      idex.MemtoReg_out <= 0;
+      idex.Imm_out <= 0;
+      idex.wsel_out <= 0;
+      idex.JumpAddr_out <= 0;
+      idex.pcp4_out <= 0;
+      idex.rdat1_out <= 0;
+      idex.rdat2_out <= 0;
+      idex.HALT_out <= 0;
+      idex.opcode_out <= RTYPE;
+      idex.funct_out <= SLL;
+    end
   	else if (idex.iHit) begin
   		idex.dREN_out <= idex.dREN;
       idex.dWEN_out <= idex.dWEN;

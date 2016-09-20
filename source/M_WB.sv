@@ -12,7 +12,7 @@ module M_WB (
 
   always_ff @ (posedge CLK, negedge nRST)
   begin
-  	if (mwb.flush == 1 || !nRST) begin
+  	if (!nRST) begin
   		mwb.dmemLoad_out <= 0;
   		mwb.MemtoReg_out <= 0;
   		mwb.portO_out <= 0;
@@ -24,6 +24,18 @@ module M_WB (
       mwb.funct_out <= SLL;
       mwb.wdatasrc_out <= 0;
   	end 
+    else if(mwb.flush == 1) begin
+      mwb.dmemLoad_out <= 0;
+      mwb.MemtoReg_out <= 0;
+      mwb.portO_out <= 0;
+      mwb.Wsel_out <= 0;
+      mwb.RegWEN_out <= 0;
+      mwb.pcp4_out <= 0;
+      mwb.HALT_out <= 0;
+      mwb.opcode_out <= RTYPE;
+      mwb.funct_out <= SLL;
+      mwb.wdatasrc_out <= 0;
+    end
   	else if (mwb.iHit || mwb.dHit) begin
 		  mwb.dmemLoad_out <= mwb.dmemLoad;
   		mwb.MemtoReg_out <= mwb.MemtoReg;

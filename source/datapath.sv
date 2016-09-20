@@ -60,7 +60,7 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit;
+  assign pcif.pcen = dpif.ihit && !dpif.halt;
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
@@ -78,7 +78,7 @@ module datapath (
   //Register File
   assign rfif.rsel1 = cuif.rsel1;
   assign rfif.rsel2 = cuif.rsel2;
-  assign rfif.WEN = mwb.RegWEN_out && (dpif.ihit || dpif.dhit);
+  assign rfif.WEN = mwb.RegWEN_out;
   assign rfif.wsel = mwb.Wsel_out;
 
   //Interface
@@ -131,11 +131,32 @@ module datapath (
   assign exm.dHit = dpif.dhit;
   assign exm.flush = 0;
   assign exm.HALT = idex.HALT_out;
+  assign exm.opcode = idex.opcode_out;
+  assign exm.funct = idex.funct_out;
 
   /************** MEMORY ***************/
   //To Cache
-  assign dpif.dmemREN = exm.dREN;
-  assign dpif.dmemWEN = exm.dWEN;
+
+  //always_comb 
+  //begin
+  //  if(dpif.dhit)
+   // begin
+   //   dpif.dmemREN = 0;
+   //   dpif.dmemWEN = 0;
+   // end
+   // else if(dpif.ihit)
+   // begin
+   assign dpif.dmemREN = exm.dREN_out;
+   assign dpif.dmemWEN = exm.dWEN_out;
+   // end
+   // else
+   // begin
+    //  dpif.dmemREN = 0;
+   //   dpif.dmemWEN = 0;
+   // end
+ // end
+  //assign dpif.dmemREN = exm.dREN_out;
+ //assign dpif.dmemWEN = exm.dWEN_out;
   assign dpif.dmemstore = exm.dmemStore;
   assign dpif.dmemaddr = exm.portO_out;
 
@@ -151,6 +172,8 @@ module datapath (
   assign mwb.flush = 0;
   assign mwb.HALT = exm.HALT_out;
   assign mwb.wdatasrc = exm.wdatasrc_out;
+  assign mwb.opcode = exm.opcode_out;
+  assign mwb.funct = exm.funct_out;
 
   /************ WRITE BACK *************/
 
@@ -158,6 +181,12 @@ module datapath (
   assign dpif.halt = mwb.HALT_out;
   assign dpif.imemREN = 1;
 
-
+  // always_ff @(posedge CLK, negedge nRST)
+  // begin
+  //   if(!nRST)
+  //     dpif.halt <=0;
+  //   else
+  //     dpif.halt <= mwb.HALT_out;
+  // end
 
 endmodule

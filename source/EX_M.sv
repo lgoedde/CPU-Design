@@ -12,8 +12,23 @@ module EX_M (
 
   always_ff @ (posedge CLK, negedge nRST)
   begin
-  	if (exm.flush == 1 || !nRST) begin
+  	if (!nRST) begin
 		exm.dREN_out <= 0;
+		exm.dWEN_out <= 0;
+		exm.dmemStore <= 0;
+		exm.MemtoReg_out <= 0;
+		exm.wdatasrc_out <= 0;
+		exm.portO_out <= 0;
+		exm.WSel_out <= 0;
+		exm.WEN_out <= 0;
+		exm.pcp4_out <= 0;
+		exm.HALT_out <= 0;
+		exm.opcode_out <= RTYPE;
+		exm.funct_out <= SLL;
+  	end
+  	else if(exm.flush == 1)
+  	begin
+  		exm.dREN_out <= 0;
 		exm.dWEN_out <= 0;
 		exm.dmemStore <= 0;
 		exm.MemtoReg_out <= 0;
@@ -35,8 +50,6 @@ module EX_M (
 			exm.dWEN_out <= exm.dWEN;
 			exm.dREN_out <= exm.dREN;
 		end
-  		exm.dREN_out <= exm.dREN;
-		exm.dWEN_out <= exm.dWEN;
 		exm.dmemStore <= exm.rdat2;
 		exm.MemtoReg_out <= exm.MemtoReg;
 		exm.wdatasrc_out <= exm.wdatasrc;

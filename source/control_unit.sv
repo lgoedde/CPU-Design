@@ -316,6 +316,8 @@ begin
 		end
 		HALT : begin
 			cuif.halt = 1;
+			cuif.aluSrc = 1;
+
 		end
 		default : begin
 			cuif.aluSrc = 0;
