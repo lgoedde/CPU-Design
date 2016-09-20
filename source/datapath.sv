@@ -30,6 +30,7 @@ module datapath (
   control_unit_if cuif();
   pc_if pcif();
   register_file_if rfif();
+  hazard_unit_if huif();
 
   //Pipeline interfaces
   IF_ID_if ifid();
@@ -46,6 +47,7 @@ module datapath (
   ID_EX IDEX(CLK,nRST,idex.id_ex);
   EX_M EXM(CLK,nRST,exm.ex_m);
   M_WB MWB(CLK,nRST,mwb.m_wb);
+  hazard_unit HU(huif.hu);
 
 
   //VARIABLES
@@ -54,13 +56,18 @@ module datapath (
   logic branchMux;
 
 
+  assign huif.id_rt = cuif.rsel2;
+  assign huif.id_rs = cuif.rsel1;
+  assign huif.ex_rt = idex.wsel_out;
+  assign huif.id_opcode = cuif.opcode;
+
   /******* INSTRUCTION FETCH *********/
 
   //Program Counter
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit && !dpif.halt;
+  assign pcif.pcen = dpif.ihit && !dpif.halt && huif.h_pcen;
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
@@ -68,7 +75,8 @@ module datapath (
   assign ifid.imemload = dpif.imemload;
   assign ifid.pcp4 = pcif.pc_out + 4;
   assign ifid.iHit = dpif.ihit;
-  assign ifid.flush = 0; //FIX WHEN BRANCHING
+  assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
+  assign ifid.enable = huif.ifid_pause;
 
   /******* INSTRUCTION DECODE *********/
 
@@ -82,27 +90,27 @@ module datapath (
   assign rfif.wsel = mwb.Wsel_out;
 
   //Interface
-  assign idex.dREN = cuif.dREN;
-  assign idex.dWEN = cuif.dWEN;
-  assign idex.branchSel = cuif.branchSel;
-  assign idex.branch = cuif.branch;
-  assign idex.PCSel = cuif.PCSel;
-  assign idex.ALUop = cuif.ALUop;
-  assign idex.regWrite = cuif.regWrite;
-  assign idex.wDataSrc = cuif.wdataSrc;
-  assign idex.aluSrc = cuif.aluSrc;
-  assign idex.MemtoReg = cuif.memtoReg;
-  assign idex.Imm = cuif.immediate;
-  assign idex.wsel = cuif.wsel;
-  assign idex.JumpAddr = ifid.instr[25:0];
-  assign idex.pcp4 = ifid.pcp4_out;
-  assign idex.rdat1 = rfif.rdat1;
-  assign idex.rdat2 = rfif.rdat2;
+  assign idex.dREN = huif.idex_nop == 1 ? 0 : cuif.dREN;
+  assign idex.dWEN = huif.idex_nop == 1 ? 0 : cuif.dWEN;
+  assign idex.branchSel = huif.idex_nop == 1 ? 0 : cuif.branchSel;
+  assign idex.branch = huif.idex_nop == 1 ? 0 : cuif.branch;
+  assign idex.PCSel = huif.idex_nop == 1 ? 2'b11 : cuif.PCSel;
+  assign idex.ALUop = huif.idex_nop == 1 ? ALU_SLL : cuif.ALUop;
+  assign idex.regWrite = huif.idex_nop == 1 ? 0 : cuif.regWrite;
+  assign idex.wDataSrc = huif.idex_nop == 1 ? 0 : cuif.wdataSrc;
+  assign idex.aluSrc = huif.idex_nop == 1 ? 0 : cuif.aluSrc;
+  assign idex.MemtoReg = huif.idex_nop == 1 ? 0 : cuif.memtoReg;
+  assign idex.Imm = huif.idex_nop == 1 ? 0 : cuif.immediate;
+  assign idex.wsel = huif.idex_nop == 1 ? 0 : cuif.wsel;
+  assign idex.JumpAddr = huif.idex_nop == 1 ? 0 : ifid.instr[25:0];
+  assign idex.pcp4 = huif.idex_nop == 1 ? 0 : ifid.pcp4_out;
+  assign idex.rdat1 = huif.idex_nop == 1 ? 0 : rfif.rdat1;
+  assign idex.rdat2 = huif.idex_nop == 1 ? 0 : rfif.rdat2;
   assign idex.iHit = dpif.ihit;
-  assign idex.flush = 0;
-  assign idex.HALT = cuif.halt;
-  assign idex.opcode = cuif.opcode;
-  assign idex.funct = cuif.funct;
+  assign idex.flush = idex.PCSel_out != 2'b11;
+  assign idex.HALT = huif.idex_nop == 1 ? 0 : cuif.halt;
+  assign idex.opcode = huif.idex_nop == 1 ? RTYPE : cuif.opcode;
+  assign idex.funct = huif.idex_nop == 1 ? SLL : cuif.funct;
 
 
   /******* EXECUTE INSTRUCTION *********/
@@ -137,26 +145,8 @@ module datapath (
   /************** MEMORY ***************/
   //To Cache
 
-  //always_comb 
-  //begin
-  //  if(dpif.dhit)
-   // begin
-   //   dpif.dmemREN = 0;
-   //   dpif.dmemWEN = 0;
-   // end
-   // else if(dpif.ihit)
-   // begin
    assign dpif.dmemREN = exm.dREN_out;
    assign dpif.dmemWEN = exm.dWEN_out;
-   // end
-   // else
-   // begin
-    //  dpif.dmemREN = 0;
-   //   dpif.dmemWEN = 0;
-   // end
- // end
-  //assign dpif.dmemREN = exm.dREN_out;
- //assign dpif.dmemWEN = exm.dWEN_out;
   assign dpif.dmemstore = exm.dmemStore;
   assign dpif.dmemaddr = exm.portO_out;
 
@@ -180,13 +170,5 @@ module datapath (
   assign rfif.wdat = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
   assign dpif.halt = mwb.HALT_out;
   assign dpif.imemREN = 1;
-
-  // always_ff @(posedge CLK, negedge nRST)
-  // begin
-  //   if(!nRST)
-  //     dpif.halt <=0;
-  //   else
-  //     dpif.halt <= mwb.HALT_out;
-  // end
 
 endmodule
