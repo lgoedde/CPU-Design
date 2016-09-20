@@ -14,11 +14,10 @@ r_t rtypeInstr;
 word_t signExtendImm;
 word_t zeroExtendImm;
 
-opcode_t opcode;
-funct_t funct;
+
  
-assign opcode = rtypeInstr.opcode;
-assign funct = rtypeInstr.funct;
+assign cuif.opcode = rtypeInstr.opcode;
+assign cuif.funct = rtypeInstr.funct;
 
 assign signExtendImm = itypeInstr.imm[15] == 1 ? {16'hFFFF,itypeInstr.imm} : {16'b0,itypeInstr.imm};
 assign zeroExtendImm = {16'b0, itypeInstr.imm};

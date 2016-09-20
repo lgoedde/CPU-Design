@@ -32,13 +32,15 @@ interface control_unit_if;
   word_t immediate; 
   logic regWrite;
   logic wdataSrc;
+  opcode_t opcode;
+  funct_t funct;
 
 
   // datapath ports
   modport cu (
     input   instr,
     output  dREN,dWEN,halt,PCSel,branch,branchSel,memtoReg,
-            aluSrc,ALUop,rsel1,rsel2,wsel,regWrite,immediate, wdataSrc
+            aluSrc,ALUop,rsel1,rsel2,wsel,regWrite,immediate, wdataSrc,opcode,funct
   );
 
 endinterface

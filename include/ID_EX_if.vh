@@ -28,6 +28,8 @@ interface ID_EX_if;
   logic iHit;
   logic flush;
   logic HALT;
+  opcode_t opcode;
+  funct_t funct;
 
   //Outputs
   logic dREN_out;
@@ -47,12 +49,14 @@ interface ID_EX_if;
   word_t rdat1_out;
   word_t rdat2_out;
   logic HALT_out;
+  opcode_t opcode_out;
+  funct_t funct_out;
 
   modport id_ex (
     input dREN,dWEN,branchSel,branch,PCSel,ALUop,regWrite,wDataSrc,aluSrc,
-          MemtoReg,Imm,wsel,JumpAddr,pcp4,rdat1,rdat2,iHit,flush,HALT,
+          MemtoReg,Imm,wsel,JumpAddr,pcp4,rdat1,rdat2,iHit,flush,HALT,opcode,funct,
     output dREN_out,dWEN_out,branchSel_out,branch_out,PCSel_out,ALUop_out,regWrite_out,wDataSrc_out,aluSrc_out,
-          MemtoReg_out,Imm_out,wsel_out,JumpAddr_out,pcp4_out,rdat1_out,rdat2_out,HALT_out
+          MemtoReg_out,Imm_out,wsel_out,JumpAddr_out,pcp4_out,rdat1_out,rdat2_out,HALT_out,opcode_out,funct_out
   	);
   
 endinterface 

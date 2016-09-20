@@ -30,6 +30,8 @@ module ID_EX (
     	idex.rdat1_out <= 0;
     	idex.rdat2_out <= 0;
       idex.HALT_out <= 0;
+      idex.opcode_out <= RTYPE;
+      idex.funct_out <= SLL;
   	end
   	else if (idex.iHit) begin
   		idex.dREN_out <= idex.dREN;
@@ -49,6 +51,8 @@ module ID_EX (
       idex.rdat1_out <= idex.rdat1;
       idex.rdat2_out <= idex.rdat2;
       idex.HALT_out <= idex.HALT;
+      idex.opcode_out <= idex.opcode;
+      idex.funct_out <= idex.funct;
   	end
   end
 endmodule // IF_ID

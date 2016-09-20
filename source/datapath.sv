@@ -101,6 +101,8 @@ module datapath (
   assign idex.iHit = dpif.ihit;
   assign idex.flush = 0;
   assign idex.HALT = cuif.halt;
+  assign idex.opcode = cuif.opcode;
+  assign idex.funct = cuif.funct;
 
 
   /******* EXECUTE INSTRUCTION *********/

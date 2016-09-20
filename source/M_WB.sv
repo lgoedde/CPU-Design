@@ -22,6 +22,7 @@ module M_WB (
       mwb.HALT_out <= 0;
       mwb.opcode_out <= RTYPE;
       mwb.funct_out <= SLL;
+      mwb.wdatasrc_out <= 0;
   	end 
   	else if (mwb.iHit || mwb.dHit) begin
 		  mwb.dmemLoad_out <= mwb.dmemLoad;
@@ -32,6 +33,7 @@ module M_WB (
   		mwb.pcp4_out <= mwb.pcp4;
       mwb.HALT_out <= mwb.HALT;
       mwb.opcode_out <= mwb.opcode;
+      mwb.wdatasrc_out <= mwb.wdatasrc;
       mwb.funct_out <= mwb.funct;
   	end // else
   end
