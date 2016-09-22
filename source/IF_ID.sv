@@ -16,14 +16,16 @@ module IF_ID (
   		ifid.instr <= 0;
   		ifid.pcp4_out <= 0;
   	end
-    else if(ifid.flush == 1)
-    begin
+  	else if (ifid.iHit) begin
+      if(ifid.flush == 1)
+      begin
       ifid.instr <= 0;
       ifid.pcp4_out <= 0;
-    end
-  	else if (ifid.iHit) begin
+      end
+      else begin
   		ifid.instr <= ifid.imemload;
   		ifid.pcp4_out <= ifid.pcp4;
+      end
   	end
   end
 endmodule // IF_ID
