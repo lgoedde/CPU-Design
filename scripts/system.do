@@ -116,7 +116,7 @@ add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memaddr
 add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memstore
 add wave -noupdate /system_tb/DUT/CPU/DP/REGF/register
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {20388552000 ps} 0}
+WaveRestoreCursors {{Cursor 1} {872483 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -133,3 +133,4 @@ configure wave -timeline 0
 configure wave -timelineunits ns
 update
 WaveRestoreZoom {1314676800 ps} {1314932800 ps}
+

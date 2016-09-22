@@ -70,8 +70,8 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit && !dpif.halt && huif.h_pcen;
-  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
+  assign pcif.pcen = dpif.ihit && !dpif.halt;
+  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
   //Interface
@@ -120,7 +120,7 @@ module datapath (
 
   // ALU
   assign aluif.port_a = idex.rdat1_out;
-  assign aluif.port_b = idex.aluSrc == 1 ? idex.Imm_out : idex.rdat2_out; 
+  assign aluif.port_b = idex.aluSrc_out == 1 ? idex.Imm_out : idex.rdat2_out; 
   assign aluif.alu_op = idex.ALUop_out;
 
 
@@ -140,7 +140,7 @@ module datapath (
   assign exm.wdatasrc = idex.wDataSrc_out;
   assign exm.iHit = dpif.ihit;
   assign exm.dHit = dpif.dhit;
-  assign exm.flush = 0;
+  assign exm.flush = dpif.dhit;
   assign exm.HALT = idex.HALT_out;
   assign exm.opcode = idex.opcode_out;
   assign exm.funct = idex.funct_out;
