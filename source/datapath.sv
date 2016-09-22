@@ -61,14 +61,14 @@ module datapath (
   
   //program counter
   assign pcif.pcen = dpif.ihit && !dpif.halt;
-  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
+  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
   //Interface
   assign ifid.imemload = dpif.imemload;
   assign ifid.pcp4 = pcif.pc_out + 4;
   assign ifid.iHit = dpif.ihit;
-  assign ifid.flush = 0; //FIX WHEN BRANCHING
+  assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
 
   /******* INSTRUCTION DECODE *********/
 
@@ -99,7 +99,7 @@ module datapath (
   assign idex.rdat1 = rfif.rdat1;
   assign idex.rdat2 = rfif.rdat2;
   assign idex.iHit = dpif.ihit;
-  assign idex.flush = 0;
+  assign idex.flush = idex.PCSel_out != 2'b11;
   assign idex.HALT = cuif.halt;
   assign idex.opcode = cuif.opcode;
   assign idex.funct = cuif.funct;
@@ -109,7 +109,7 @@ module datapath (
 
   // ALU
   assign aluif.port_a = idex.rdat1_out;
-  assign aluif.port_b = idex.aluSrc == 1 ? idex.Imm_out : idex.rdat2_out; 
+  assign aluif.port_b = idex.aluSrc_out == 1 ? idex.Imm_out : idex.rdat2_out; 
   assign aluif.alu_op = idex.ALUop_out;
 
 
@@ -129,7 +129,7 @@ module datapath (
   assign exm.wdatasrc = idex.wDataSrc_out;
   assign exm.iHit = dpif.ihit;
   assign exm.dHit = dpif.dhit;
-  assign exm.flush = 0;
+  assign exm.flush = dpif.dhit;
   assign exm.HALT = idex.HALT_out;
   assign exm.opcode = idex.opcode_out;
   assign exm.funct = idex.funct_out;
