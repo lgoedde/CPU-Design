@@ -15,7 +15,7 @@ module hazard_unit(
 	assign iType = huif.id_opcode == ADDI || huif.id_opcode == ADDIU || huif.id_opcode == SLTI || huif.id_opcode == SLTIU || huif.id_opcode == ANDI || huif.id_opcode == ORI || huif.id_opcode == XORI;       
 
 	always_comb begin
-		if (huif.ex_lw && (huif.id_opcode == RTYPE || huif.id_opcode == BNE || huif.id_opcode == BEQ) && rType_register_dependency) begin
+		if (huif.ex_lw && (huif.id_opcode == RTYPE || huif.id_opcode == BNE || huif.id_opcode == BEQ || huif.id_opcode == SW) && rType_register_dependency) begin
 			huif.h_pcen	= 0;
 			huif.ifid_pause = 1;
 			huif.idex_nop = 1;

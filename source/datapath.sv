@@ -56,7 +56,7 @@ module datapath (
   logic branchMux;
   logic ex_lw;
 
-  assign ex_lw = idex.opcode == LW;
+  assign ex_lw = idex.opcode_out == LW;
 
   assign huif.id_rt = cuif.rsel2;
   assign huif.id_rs = cuif.rsel1;
@@ -70,7 +70,7 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit && !dpif.halt;
+  assign pcif.pcen = dpif.ihit && !dpif.halt && huif.h_pcen;
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
