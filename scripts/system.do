@@ -43,6 +43,14 @@ add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/wsel
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/immediate
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/regWrite
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/wdataSrc
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_rt
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_rs
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ex_rt
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ex_lw
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_opcode
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/h_pcen
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ifid_pause
+add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/idex_nop
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pcen
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pc_next
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pc_out
@@ -124,4 +132,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {256 ns}
+WaveRestoreZoom {1314676800 ps} {1314932800 ps}

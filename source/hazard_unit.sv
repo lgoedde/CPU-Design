@@ -6,13 +6,21 @@ module hazard_unit(
 );
 
 	import cpu_types_pkg::*;
-	logic register_dependency;
+	logic rType_register_dependency;
+	logic iType_register_dependency;
+	logic iType;
 
-	assign register_dependency = huif.ex_rt == huif.id_rt || huif.ex_rt == huif.id_rs; 
-
+	assign rType_register_dependency = huif.ex_rt == huif.id_rt || huif.ex_rt == huif.id_rs; 
+	assign iType_register_dependency = huif.ex_rt == huif.id_rs;
+	assign iType = huif.id_opcode == ADDI || huif.id_opcode == ADDIU || huif.id_opcode == SLTI || huif.id_opcode == SLTIU || huif.id_opcode == ANDI || huif.id_opcode == ORI || huif.id_opcode == XORI;       
 
 	always_comb begin
-		if (huif.ex_lw && (huif.id_opcode == RTYPE || huif.id_opcode == BNE || huif.id_opcode == BEQ) && register_dependency) begin
+		if (huif.ex_lw && (huif.id_opcode == RTYPE || huif.id_opcode == BNE || huif.id_opcode == BEQ) && rType_register_dependency) begin
+			huif.h_pcen	= 0;
+			huif.ifid_pause = 1;
+			huif.idex_nop = 1;
+		end
+		else if (huif.ex_lw && iType && iType_register_dependency) begin
 			huif.h_pcen	= 0;
 			huif.ifid_pause = 1;
 			huif.idex_nop = 1;

@@ -54,12 +54,15 @@ module datapath (
   word_t jump_address;
   word_t branch_address;
   logic branchMux;
+  logic ex_lw;
 
+  assign ex_lw = idex.opcode == LW;
 
   assign huif.id_rt = cuif.rsel2;
   assign huif.id_rs = cuif.rsel1;
   assign huif.ex_rt = idex.wsel_out;
   assign huif.id_opcode = cuif.opcode;
+  assign huif.ex_lw = ex_lw;
 
   /******* INSTRUCTION FETCH *********/
 
@@ -68,7 +71,7 @@ module datapath (
   
   //program counter
   assign pcif.pcen = dpif.ihit && !dpif.halt && huif.h_pcen;
-  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
+  assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
   //Interface
@@ -76,7 +79,7 @@ module datapath (
   assign ifid.pcp4 = pcif.pc_out + 4;
   assign ifid.iHit = dpif.ihit;
   assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
-  assign ifid.enable = huif.ifid_pause;
+  assign ifid.enable = ~huif.ifid_pause;
 
   /******* INSTRUCTION DECODE *********/
 
