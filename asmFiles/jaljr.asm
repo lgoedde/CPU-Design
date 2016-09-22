@@ -24,11 +24,6 @@ braR:
   halt
   sw    $1, 12($2)
 jmpR:
-  nop
-  nop
-  nop
-  nop
-  nop
   jr $31
   bne   $ra, $3, end
   halt
