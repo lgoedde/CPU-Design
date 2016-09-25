@@ -32,6 +32,8 @@ module ID_EX (
       idex.HALT_out <= 0;
       idex.opcode_out <= RTYPE;
       idex.funct_out <= SLL;
+      idex.rs_out <= 0;
+      idex.rt_out <= 0;
   	end
   	else if (idex.iHit) begin
       if(idex.flush == 1) begin
@@ -54,6 +56,8 @@ module ID_EX (
       idex.HALT_out <= 0;
       idex.opcode_out <= RTYPE;
       idex.funct_out <= SLL;
+      idex.rs_out <= 0;
+      idex.rt_out <= 0;
     end else begin 
   		idex.dREN_out <= idex.dREN;
       idex.dWEN_out <= idex.dWEN;
@@ -74,6 +78,8 @@ module ID_EX (
       idex.HALT_out <= idex.HALT;
       idex.opcode_out <= idex.opcode;
       idex.funct_out <= idex.funct;
+      idex.rs_out <= idex.rs;
+      idex.rt_out <= idex.rt;
   	end
   end
   end

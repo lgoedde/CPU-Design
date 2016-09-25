@@ -10,9 +10,16 @@ interface hazard_unit_if;
   import cpu_types_pkg::*;
 
   //Inputs
-  regbits_t id_rt;
-  regbits_t id_rs;
   regbits_t ex_rt;
+  regbits_t ex_rs;
+  
+  regbits_t m_wsel;
+  logic m_wen;
+
+  regbits_t w_wsel;
+  logic w_wen;
+
+
 
   logic ex_lw;
   opcode_t id_opcode;
@@ -22,9 +29,12 @@ interface hazard_unit_if;
   logic ifid_pause;
   logic idex_nop;
 
+  logic [1:0] forward1; // 00 for default, 01 for memory, 10 for write back
+  logic [1:0] forward2;
+
   modport hu (
-  	input id_rt,id_rs,ex_rt,ex_lw,id_opcode,
-  	output h_pcen, ifid_pause,idex_nop
+  	input ex_rt,ex_rs,ex_lw,id_opcode,m_wsel,m_wen,w_wsel,w_wen,
+  	output h_pcen, ifid_pause,idex_nop,forward1,forward2
   	);
 
 endinterface

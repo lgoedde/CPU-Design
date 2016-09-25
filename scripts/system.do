@@ -4,6 +4,7 @@ quietly WaveActivateNextPane {} 0
 add wave -noupdate /system_tb/DUT/CLK
 add wave -noupdate /system_tb/DUT/nRST
 add wave -noupdate /system_tb/DUT/halt
+add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/forwarded
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/jump_address
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/branch_address
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/branchMux
@@ -20,13 +21,13 @@ add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/dpif/flushed
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/dpif/dmemload
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/dpif/dmemstore
 add wave -noupdate -expand -group DPIF /system_tb/DUT/CPU/DP/dpif/dmemaddr
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/NEG
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/OVER
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/ZERO
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/alu_op
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/port_a
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/port_b
-add wave -noupdate -group ALUIF /system_tb/DUT/CPU/DP/aluif/out
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/NEG
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/OVER
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/ZERO
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/alu_op
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/port_a
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/port_b
+add wave -noupdate -expand -group ALUIF /system_tb/DUT/CPU/DP/aluif/out
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/instr
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/dREN
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/dWEN
@@ -43,14 +44,20 @@ add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/wsel
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/immediate
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/regWrite
 add wave -noupdate -group CUIF /system_tb/DUT/CPU/DP/cuif/wdataSrc
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_rt
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_rs
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ex_rt
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ex_lw
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/id_opcode
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/h_pcen
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/ifid_pause
-add wave -noupdate -group huif /system_tb/DUT/CPU/DP/huif/idex_nop
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/m_wsel
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/m_wen
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/w_wsel
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/w_wen
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/forward1
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/forward2
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/id_rt
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/id_rs
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/ex_rt
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/ex_lw
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/id_opcode
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/h_pcen
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/ifid_pause
+add wave -noupdate -expand -group huif /system_tb/DUT/CPU/DP/huif/idex_nop
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pcen
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pc_next
 add wave -noupdate -expand -group PCIF /system_tb/DUT/CPU/DP/pcif/pc_out
@@ -104,19 +111,19 @@ add wave -noupdate -expand -group MWB /system_tb/DUT/CPU/DP/mwb/Wsel_out
 add wave -noupdate -expand -group MWB /system_tb/DUT/CPU/DP/mwb/RegWEN_out
 add wave -noupdate -expand -group MWB /system_tb/DUT/CPU/DP/mwb/pcp4_out
 add wave -noupdate -expand -group MWB /system_tb/DUT/CPU/DP/mwb/HALT_out
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramREN
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramWEN
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramaddr
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramstore
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramload
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/ramstate
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memREN
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memWEN
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memaddr
-add wave -noupdate -expand -group RAM /system_tb/DUT/RAM/ramif/memstore
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramREN
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramWEN
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramaddr
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramstore
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramload
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/ramstate
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/memREN
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/memWEN
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/memaddr
+add wave -noupdate -group RAM /system_tb/DUT/RAM/ramif/memstore
 add wave -noupdate /system_tb/DUT/CPU/DP/REGF/register
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {872483 ps} 0}
+WaveRestoreCursors {{Cursor 1} {696098 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -132,5 +139,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {1314676800 ps} {1314932800 ps}
-
+WaveRestoreZoom {668598 ps} {1243958 ps}

@@ -40,6 +40,8 @@ interface EX_M_if;
   opcode_t opcode_out;
   funct_t funct_out;
 
+
+
   modport ex_m (
     input dREN,dWEN,rdat2,MemtoReg,portO,WSel,WEN,pcp4,wdatasrc,iHit,dHit,flush,HALT,opcode,funct,
   	output dREN_out,dWEN_out,dmemStore,MemtoReg_out,wdatasrc_out,portO_out,WSel_out,WEN_out,pcp4_out,HALT_out,opcode_out,funct_out

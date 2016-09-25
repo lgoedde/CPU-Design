@@ -41,7 +41,7 @@ module EX_M (
 		exm.opcode_out <= RTYPE;
 		exm.funct_out <= SLL;
   	end
-  	else if (exm.iHit )begin
+  	else if (exm.iHit)begin
 		exm.dWEN_out <= exm.dWEN;
 		exm.dREN_out <= exm.dREN;
 		exm.dmemStore <= exm.rdat2;
