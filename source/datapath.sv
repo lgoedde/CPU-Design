@@ -154,6 +154,8 @@ module datapath (
       aluif.port_b = forwarded;
     else if(idex.aluSrc_out == 1)
       aluif.port_b = idex.Imm_out;
+    else
+      aluif.port_b = 0;
   end
 
   assign aluif.alu_op = idex.ALUop_out;
