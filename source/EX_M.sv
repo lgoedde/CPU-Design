@@ -26,8 +26,9 @@ module EX_M (
 		exm.opcode_out <= RTYPE;
 		exm.funct_out <= SLL;
   	end
-  	else if(exm.flush == 1)
-  	begin
+  	else if (exm.iHit | exm.dHit)begin
+  		if(exm.flush == 1)
+  		begin
   		exm.dREN_out <= 0;
 		exm.dWEN_out <= 0;
 		exm.dmemStore <= 0;
@@ -40,8 +41,9 @@ module EX_M (
 		exm.HALT_out <= 0;
 		exm.opcode_out <= RTYPE;
 		exm.funct_out <= SLL;
-  	end
-  	else if (exm.iHit)begin
+  		end
+  		else
+  		begin
 		exm.dWEN_out <= exm.dWEN;
 		exm.dREN_out <= exm.dREN;
 		exm.dmemStore <= exm.rdat2;
@@ -54,6 +56,7 @@ module EX_M (
 		exm.HALT_out <= exm.HALT;
 		exm.opcode_out <= exm.opcode;
 		exm.funct_out <= exm.funct;
+		end
   	end
   end
 endmodule // EX_M

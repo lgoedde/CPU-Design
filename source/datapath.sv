@@ -81,7 +81,7 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit && !dpif.halt; // && huif.h_pcen;
+  assign pcif.pcen = dpif.ihit  && (ex_lw != 1); // && huif.h_pcen;
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
@@ -91,7 +91,7 @@ module datapath (
   assign ifid.iHit = dpif.ihit;
   assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
   //assign ifid.enable = ~huif.ifid_pause;
-  assign ifid.enable = dpif.ihit;
+  assign ifid.enable = dpif.ihit && (ex_lw != 1);
 
   /******* INSTRUCTION DECODE *********/
 
@@ -122,7 +122,7 @@ module datapath (
   assign idex.rdat1 =  rfif.rdat1;
   assign idex.rdat2 =  rfif.rdat2;
   assign idex.iHit = dpif.ihit;
-  assign idex.flush = idex.PCSel_out != 2'b11;
+  assign idex.flush = idex.PCSel_out != 2'b11 || (ex_lw == 1);
   assign idex.HALT =  cuif.halt;
   assign idex.opcode =  cuif.opcode;
   assign idex.funct =  cuif.funct;
