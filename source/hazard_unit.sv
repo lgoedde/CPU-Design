@@ -36,17 +36,17 @@ module hazard_unit(
 
 	always_comb begin
 		//rs forwarding
-		if (huif.w_wen == 1 && huif.w_wsel != 0 && huif.w_wsel == huif.ex_rs)
-			huif.forward1 = 2'b10; 
-		else if (huif.m_wen == 1 && huif.m_wsel != 0 && huif.m_wsel == huif.ex_rs)
+		if (huif.m_wen == 1 && huif.m_wsel != 0 && huif.m_wsel == huif.ex_rs)
 			huif.forward1 = 2'b01;
+		else if (huif.w_wen == 1 && huif.w_wsel != 0 && huif.w_wsel == huif.ex_rs)
+			huif.forward1 = 2'b10; 
 		else 
 			huif.forward1 = 2'b00;
 		//rt forwarding
-		if (huif.w_wen == 1 && huif.w_wsel != 0 && huif.w_wsel == huif.ex_rt)
-			huif.forward2 = 2'b10; 
-		else if (huif.m_wen == 1 && huif.m_wsel != 0 && huif.m_wsel == huif.ex_rt)
+		if (huif.m_wen == 1 && huif.m_wsel != 0 && huif.m_wsel == huif.ex_rt)
 			huif.forward2 = 2'b01;
+		else if (huif.w_wen == 1 && huif.w_wsel != 0 && huif.w_wsel == huif.ex_rt)
+			huif.forward2 = 2'b10; 
 		else 
 			huif.forward2 = 2'b00;
 
