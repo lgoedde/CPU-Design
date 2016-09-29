@@ -30,6 +30,7 @@ module datapath (
   control_unit_if cuif();
   pc_if pcif();
   register_file_if rfif();
+  hazard_unit_if huif();
 
   //Pipeline interfaces
   IF_ID_if ifid();
@@ -46,13 +47,34 @@ module datapath (
   ID_EX IDEX(CLK,nRST,idex.id_ex);
   EX_M EXM(CLK,nRST,exm.ex_m);
   M_WB MWB(CLK,nRST,mwb.m_wb);
+  hazard_unit HU(huif.hu);
 
 
   //VARIABLES
   word_t jump_address;
   word_t branch_address;
   logic branchMux;
+  logic ex_lw, ex_sw;
+  word_t forwarded;
+  word_t wdat_temp;
+  word_t wdat_mem;
 
+  word_t forward_m_data;
+  word_t forward_w_data;
+
+  assign ex_lw = idex.opcode_out == LW;
+  assign ex_sw = idex.opcode_out == SW;
+
+  assign huif.ex_rt = idex.rt_out;
+  assign huif.ex_rs = idex.rs_out;
+  assign huif.id_opcode = cuif.opcode;
+  assign huif.ex_lw = ex_lw;
+  assign forward_m_data = wdat_mem;
+  assign huif.m_wen = exm.WEN_out;
+  assign huif.m_wsel = exm.WSel_out;
+  assign forward_w_data = wdat_temp;
+  assign huif.w_wen = mwb.RegWEN_out;
+  assign huif.w_wsel = mwb.Wsel_out;
 
   /******* INSTRUCTION FETCH *********/
 
@@ -60,7 +82,7 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit && !dpif.halt;
+  assign pcif.pcen = dpif.ihit  && (ex_lw != 1) && (ex_sw != 1); // && huif.h_pcen;
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
@@ -69,6 +91,8 @@ module datapath (
   assign ifid.pcp4 = pcif.pc_out + 4;
   assign ifid.iHit = dpif.ihit;
   assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
+  //assign ifid.enable = ~huif.ifid_pause;
+  assign ifid.enable = dpif.ihit && (ex_lw != 1) && (ex_sw != 1);
 
   /******* INSTRUCTION DECODE *********/
 
@@ -83,33 +107,58 @@ module datapath (
 
   //Interface
   assign idex.dREN = cuif.dREN;
-  assign idex.dWEN = cuif.dWEN;
-  assign idex.branchSel = cuif.branchSel;
-  assign idex.branch = cuif.branch;
-  assign idex.PCSel = cuif.PCSel;
-  assign idex.ALUop = cuif.ALUop;
-  assign idex.regWrite = cuif.regWrite;
-  assign idex.wDataSrc = cuif.wdataSrc;
-  assign idex.aluSrc = cuif.aluSrc;
-  assign idex.MemtoReg = cuif.memtoReg;
-  assign idex.Imm = cuif.immediate;
-  assign idex.wsel = cuif.wsel;
+  assign idex.dWEN =  cuif.dWEN;
+  assign idex.branchSel =  cuif.branchSel;
+  assign idex.branch =  cuif.branch;
+  assign idex.PCSel =  cuif.PCSel;
+  assign idex.ALUop =  cuif.ALUop;
+  assign idex.regWrite =  cuif.regWrite;
+  assign idex.wDataSrc =  cuif.wdataSrc;
+  assign idex.aluSrc =  cuif.aluSrc;
+  assign idex.MemtoReg =  cuif.memtoReg;
+  assign idex.Imm =  cuif.immediate;
+  assign idex.wsel =  cuif.wsel;
   assign idex.JumpAddr = ifid.instr[25:0];
-  assign idex.pcp4 = ifid.pcp4_out;
-  assign idex.rdat1 = rfif.rdat1;
-  assign idex.rdat2 = rfif.rdat2;
+  assign idex.pcp4 =  ifid.pcp4_out;
+  assign idex.rdat1 =  rfif.rdat1;
+  assign idex.rdat2 =  rfif.rdat2;
   assign idex.iHit = dpif.ihit;
-  assign idex.flush = idex.PCSel_out != 2'b11;
-  assign idex.HALT = cuif.halt;
-  assign idex.opcode = cuif.opcode;
-  assign idex.funct = cuif.funct;
+  assign idex.flush = idex.PCSel_out != 2'b11 || (ex_lw == 1) || (ex_sw == 1);
+  assign idex.HALT =  cuif.halt;
+  assign idex.opcode =  cuif.opcode;
+  assign idex.funct =  cuif.funct;
+  assign idex.rs = cuif.rsel1;
+  assign idex.rt = cuif.rsel2;
 
 
   /******* EXECUTE INSTRUCTION *********/
 
   // ALU
-  assign aluif.port_a = idex.rdat1_out;
-  assign aluif.port_b = idex.aluSrc_out == 1 ? idex.Imm_out : idex.rdat2_out; 
+  assign aluif.port_a = huif.forward1 == 2'b00 ? idex.rdat1_out : huif.forward1 == 2'b01 ? forward_m_data : forward_w_data;
+  //assign aluif.port_b = huif.forward2 == 2'b00 ? (idex.aluSrc_out == 1 ? idex.Imm_out : idex.rdat2_out) :  huif.forward2 == 2'b01 ? forward_m_data : forward_w_data;
+  
+  always_comb
+  begin
+    if(huif.forward2 == 2'b00)
+      forwarded = idex.rdat2_out;
+    else if(huif.forward2 == 2'b01)
+      forwarded = forward_m_data;
+    else if(huif.forward2 == 2'b10)
+      forwarded = forward_w_data;
+    else
+      forwarded = 0;
+  end
+
+  always_comb
+  begin
+    if(idex.aluSrc_out == 0)
+      aluif.port_b = forwarded;
+    else if(idex.aluSrc_out == 1)
+      aluif.port_b = idex.Imm_out;
+    else
+      aluif.port_b = 0;
+  end
+
   assign aluif.alu_op = idex.ALUop_out;
 
 
@@ -120,7 +169,7 @@ module datapath (
   //Interface
   assign exm.dREN = idex.dREN_out;
   assign exm.dWEN = idex.dWEN_out;
-  assign exm.rdat2 = idex.rdat2_out;
+  assign exm.rdat2 = forwarded;
   assign exm.MemtoReg = idex.MemtoReg_out;
   assign exm.portO = aluif.out;
   assign exm.WSel = idex.wsel_out;
@@ -134,29 +183,14 @@ module datapath (
   assign exm.opcode = idex.opcode_out;
   assign exm.funct = idex.funct_out;
 
+  //forwarding stuff
+  assign wdat_mem = exm.wdatasrc_out == 1 ? exm.pcp4_out : exm.MemtoReg_out == 1 ? dpif.dmemload : exm.portO_out;
+
   /************** MEMORY ***************/
   //To Cache
 
-  //always_comb 
-  //begin
-  //  if(dpif.dhit)
-   // begin
-   //   dpif.dmemREN = 0;
-   //   dpif.dmemWEN = 0;
-   // end
-   // else if(dpif.ihit)
-   // begin
    assign dpif.dmemREN = exm.dREN_out;
    assign dpif.dmemWEN = exm.dWEN_out;
-   // end
-   // else
-   // begin
-    //  dpif.dmemREN = 0;
-   //   dpif.dmemWEN = 0;
-   // end
- // end
-  //assign dpif.dmemREN = exm.dREN_out;
- //assign dpif.dmemWEN = exm.dWEN_out;
   assign dpif.dmemstore = exm.dmemStore;
   assign dpif.dmemaddr = exm.portO_out;
 
@@ -178,15 +212,8 @@ module datapath (
   /************ WRITE BACK *************/
 
   assign rfif.wdat = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
+  assign wdat_temp = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
   assign dpif.halt = mwb.HALT_out;
   assign dpif.imemREN = 1;
-
-  // always_ff @(posedge CLK, negedge nRST)
-  // begin
-  //   if(!nRST)
-  //     dpif.halt <=0;
-  //   else
-  //     dpif.halt <= mwb.HALT_out;
-  // end
 
 endmodule

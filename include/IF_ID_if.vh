@@ -13,13 +13,14 @@ interface IF_ID_if;
   word_t pcp4;
   logic iHit;
   logic flush;
+  logic enable;
 
   //Outputs
   word_t instr;
   word_t pcp4_out;
 
   modport if_id (
-  	input imemload,pcp4,iHit,flush,
+  	input imemload,pcp4,iHit,flush,enable,
   	output instr,pcp4_out
   	);
 

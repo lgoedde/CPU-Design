@@ -21,8 +21,8 @@ module IF_ID (
       begin
       ifid.instr <= 0;
       ifid.pcp4_out <= 0;
-      end
-      else begin
+    end
+  	else if (ifid.iHit && ifid.enable) begin
   		ifid.instr <= ifid.imemload;
   		ifid.pcp4_out <= ifid.pcp4;
       end

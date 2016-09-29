@@ -2,7 +2,7 @@
 # Test a search algorithm
 #--------------------------------------
   org   0x0000
-  ori   $sp, $zero, 0x80
+  ori   $sp, $zero, 0x4FFC
 start:
   ori   $1, $zero, 0x01
   ori   $2, $zero, 0x04
