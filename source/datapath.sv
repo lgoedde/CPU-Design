@@ -213,7 +213,16 @@ module datapath (
 
   assign rfif.wdat = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
   assign wdat_temp = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
-  assign dpif.halt = mwb.HALT_out;
+  //assign dpif.halt = mwb.HALT_out;
   assign dpif.imemREN = 1;
+
+  always_ff @(posedge CLK or negedge nRST) 
+  begin
+    if(~nRST) begin
+       dpif.halt <= 0;
+    end else begin
+        dpif.halt <= exm.HALT_out|dpif.halt;
+    end
+  end
 
 endmodule
