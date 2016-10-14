@@ -55,6 +55,7 @@ module datapath (
   word_t branch_address;
   logic branchMux;
   logic ex_lw, ex_sw;
+  logic reg_match;
   word_t forwarded;
   word_t wdat_temp;
   word_t wdat_mem;
@@ -64,6 +65,8 @@ module datapath (
 
   assign ex_lw = idex.opcode_out == LW;
   assign ex_sw = idex.opcode_out == SW;
+  assign reg_match = (cuif.rsel1 == exm.WSel_out || cuif.rsel2 == exm.WSel_out) && exm.WEN_out && exm.WSel_out != '0 && (ex_lw || ex_sw);
+
 
   assign huif.ex_rt = idex.rt_out;
   assign huif.ex_rs = idex.rs_out;
@@ -82,7 +85,7 @@ module datapath (
   parameter PC_INIT = 0;
   
   //program counter
-  assign pcif.pcen = dpif.ihit  && (ex_lw != 1) && (ex_sw != 1); // && huif.h_pcen;
+  assign pcif.pcen = dpif.ihit && !reg_match; 
   assign pcif.pc_next = idex.PCSel_out == 2'b00 ? jump_address : idex.PCSel_out == 2'b01 ? branch_address : idex.PCSel_out == 2'b10 ? idex.rdat1_out : pcif.pc_out + 4;
   assign dpif.imemaddr = pcif.pc_out;
 
@@ -92,7 +95,7 @@ module datapath (
   assign ifid.iHit = dpif.ihit;
   assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
   //assign ifid.enable = ~huif.ifid_pause;
-  assign ifid.enable = dpif.ihit && (ex_lw != 1) && (ex_sw != 1);
+  assign ifid.enable = dpif.ihit && !reg_match;
 
   /******* INSTRUCTION DECODE *********/
 
@@ -123,7 +126,7 @@ module datapath (
   assign idex.rdat1 =  rfif.rdat1;
   assign idex.rdat2 =  rfif.rdat2;
   assign idex.iHit = dpif.ihit;
-  assign idex.flush = idex.PCSel_out != 2'b11 || (ex_lw == 1) || (ex_sw == 1);
+  assign idex.flush = idex.PCSel_out != 2'b11 || reg_match;
   assign idex.HALT =  cuif.halt;
   assign idex.opcode =  cuif.opcode;
   assign idex.funct =  cuif.funct;
@@ -213,7 +216,16 @@ module datapath (
 
   assign rfif.wdat = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
   assign wdat_temp = mwb.wdatasrc_out == 1 ? mwb.pcp4_out : mwb.MemtoReg_out == 1 ? mwb.dmemLoad_out : mwb.portO_out;
-  assign dpif.halt = mwb.HALT_out;
+  //assign dpif.halt = mwb.HALT_out;
   assign dpif.imemREN = 1;
+
+  always_ff @(posedge CLK or negedge nRST) 
+  begin
+    if(~nRST) begin
+       dpif.halt <= 0;
+    end else begin
+        dpif.halt <= exm.HALT_out|dpif.halt;
+    end
+  end
 
 endmodule

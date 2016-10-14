@@ -11,25 +11,31 @@ then
 
   # Source (No latency)
   echo "Source (No Latency)"
+  sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
+  grep "LAT =" source/ram.sv | cut -d ',' -f 2
   testasm $FILES
 
   # Source (Latency)
   echo "Source (Latency)"
-  sed -i.bak 's/LAT = 0/LAT = 7/' source/ram.sv
+  sed -i.bak 's/LAT = [0-9]*/LAT = 7/' source/ram.sv
+  grep "LAT =" source/ram.sv | cut -d ',' -f 2
   testasm $FILES
 
   # Mapped (No Latency)
   echo "Mapped (No Latency)"
-  sed -i.bak 's/LAT = 7/LAT = 0/' source/ram.sv
+  sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
+  grep "LAT =" source/ram.sv | cut -d ',' -f 2
   testasm -s $FILES
 
   # Mapped (Latency)
   echo "Mapped (Latency)"
-  sed -i.bak 's/LAT = 0/LAT = 7/' source/ram.sv
+  sed -i.bak 's/LAT = [0-9]*/LAT = 7/' source/ram.sv
+  grep "LAT =" source/ram.sv | cut -d ',' -f 2
   testasm -s $FILES
 
   # Revert ram.sv back to zero latency
-  sed -i.bak 's/LAT = 7/LAT = 0/' source/ram.sv
+  sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
+  grep "LAT =" source/ram.sv | cut -d ',' -f 2
 
 
   # FPGA
@@ -41,7 +47,7 @@ then
 
   for i in asmFiles/$FILES*
   do
-    textOutput="procesing file $i ($index of $count)"
+    textOutput="processing file $i ($index of $count)"
     echo -n $textOutput
 
     size=$(resize | grep COLUMN - | cut -f2 -d"'")
@@ -77,7 +83,7 @@ then
 
   for i in asmFiles/$FILES*
   do
-    textOutput="procesing file $i ($index of $count)"
+    textOutput="processing file $i ($index of $count)"
     echo -n $textOutput
 
     size=$(resize | grep COLUMN - | cut -f2 -d"'")
