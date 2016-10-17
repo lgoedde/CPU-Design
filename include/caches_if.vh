@@ -43,6 +43,11 @@ interface caches_if;
     output  iREN, iaddr
   );
 
+  modport icache_tb (
+    output   iwait, iload,
+    input  iREN, iaddr
+  );
+
   // dcache ports to controller
   modport dcache (
     input   dwait, dload,
