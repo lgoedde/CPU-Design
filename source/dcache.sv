@@ -30,6 +30,10 @@ module icache (
   //make the table
   dset_t[15:0] d_table;
 
+  //set up the state machine
+  logic enum [3:0] {IDLE, WB1, WB2, LD1, LD2, FL1, FL2, HALT} state, next_state;
+
+  
 
 
 endmodule // dcache
