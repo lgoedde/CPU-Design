@@ -64,6 +64,9 @@ module icache (
   //need a counter to find dirty bits on halt
   logic[3:0]d_counter;
 
+  //hit counters
+  word_t hit_count, miss_count;
+
   //state logic
   always_comb
   begin
@@ -207,11 +210,13 @@ module icache (
   	end
   	LD1:
   	begin
-  		
+  		cif.dREN = 1;
+  		cif.daddr = dcif.dmemaddr;
   	end
   	LD2:
   	begin
-
+  		cif.dREN = 1;
+  		cif.daddr = dcif.dmemaddr + 4;
   	end
   	CD:
   	begin
@@ -219,19 +224,25 @@ module icache (
   	end
   	FL1:
   	begin
-
+  		cif.dWEN = 1;
+  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b000};
+  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[0];
   	end
   	FL2:
   	begin
-
+  		cif.dWEN = 1;
+  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
+  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[1];
   	end
-  	COUN:T
+  	COUNT:
   	begin
-
+  		cif.dWEN = 1;
+  		cif.daddr = 32'h3100;
+  		cif.dstore = dhit_count - miss_count;
   	end
   	HALT:
   	begin
-
+  		dcif.flushed = 1;
   	end
 
   	endcase
