@@ -90,7 +90,11 @@ program test(
 		ctb.iwait = 0;
 		ctb.iload = 32'hBADA5500;
 		#(PERIOD)
-
+		@(posedge CLK);
+		@(posedge CLK);
+		
+		dctb.imemaddr = 32'b00010000000000000000000011000100;
+		ctb.iwait = 1;
 
 		$finish;
 
