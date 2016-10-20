@@ -56,6 +56,13 @@ interface caches_if;
             ccwrite, cctrans
   );
 
+  modport dcache_tb (
+    output   dwait, dload,
+            ccwait, ccinv, ccsnoopaddr,
+    input  dREN, dWEN, daddr, dstore,
+            ccwrite, cctrans
+  );
+  
   // caches ports to controller
   modport caches(
     input   dwait, dload,
