@@ -27,7 +27,7 @@ module EX_M (
 		exm.funct_out <= SLL;
   	end
   	else begin 
-  		if (exm.iHit | exm.dHit)begin
+  		if (exm.iHit| exm.dHit)begin //
   			if(exm.flush == 1) begin
 		  		exm.dREN_out <= 0;
 				exm.dWEN_out <= 0;

@@ -56,7 +56,7 @@ module dcache (
   logic[3:0]d_counter, next_d_counter;
 
   //hit counters
-  word_t hit_count, miss_count;
+  word_t hit_count, next_hit, miss_count, next_miss;
 
   //So we know where to write
   logic write_loc;
@@ -69,11 +69,16 @@ module dcache (
   		state <= IDLE;
   		d_table <= '{default: '0};
       d_counter <= 0;
+      miss_count <= '0;
+      hit_count <= '0;
   	end 
   	else
   	begin
   		state <= next_state;
       d_counter <= next_d_counter;
+      miss_count <= next_miss;
+      hit_count <= next_hit;
+
       if(cache_write)
       begin
         d_table[newdmem.idx].dentry[write_loc].v <= next_v;
@@ -214,8 +219,8 @@ module dcache (
     next_data1 = curr_set.dentry[write_loc].data[0];
     next_data2 = curr_set.dentry[write_loc].data[1];
     next_tag = curr_set.dentry[write_loc].tag;
-    hit_count = '0;
-    miss_count = '0;
+    next_hit = hit_count;
+    next_miss = miss_count;
 
   	casez(state)
   	IDLE:
@@ -225,22 +230,24 @@ module dcache (
         cache_write = 1;
         next_lru = 1;
         dcif.dmemload = d_table[newdmem.idx].dentry[0].data[newdmem.blkoff];
-      //  write_loc = 0;
+        next_hit = next_hit + 1;
+
       end
       else if(match1 && dcif.dmemREN)
       begin
         cache_write = 1;
         next_lru = 0;
         dcif.dmemload = d_table[newdmem.idx].dentry[1].data[newdmem.blkoff];
-       // write_loc = 1;
+        next_hit = next_hit + 1;
+
       end
       else if (match0 && dcif.dmemWEN)
       begin
-       // write_loc = 0;
         cache_write = 1;
         next_lru = 1;
         next_v = 1;
         next_dirty = 1;
+        next_hit = next_hit + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -248,11 +255,11 @@ module dcache (
       end
       else if (match1 && dcif.dmemWEN)
       begin
-      //  write_loc = 1;
         cache_write = 1;
         next_lru = 0;
         next_v = 1;
         next_dirty = 1;
+        next_hit = next_hit + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -261,7 +268,6 @@ module dcache (
       else
       begin
         cache_write = 0;
-      //  write_loc = 0;
       end
   	end
   	WB1:
@@ -282,8 +288,6 @@ module dcache (
   	begin
   		cif.dREN = 1;
   		cif.daddr = {newdmem.tag, newdmem.idx, 3'b000};
-     // write_loc = curr_set.lru;
-
       if(!cif.dwait) //this may cause some issues
       begin
         cache_write = 1;
@@ -296,8 +300,8 @@ module dcache (
   	LD2:
   	begin
   		cif.dREN = 1;
-    //  write_loc = curr_set.lru;
   		cif.daddr = {newdmem.tag, newdmem.idx, 3'b100};
+      next_miss = next_miss + 1;
       if(!cif.dwait) //this may cause some issues
       begin
         next_v = 1;
@@ -314,14 +318,17 @@ module dcache (
   	FL1:
   	begin
   		cif.dWEN = 1;
-  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b000};
-  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[0];
+  		cif.daddr = {d_table[d_counter[2:0]-1].dentry[d_counter[3]].tag, d_counter[2:0], 3'b000};
+  		cif.dstore = d_table[d_counter[2:0]-1].dentry[d_counter[3]].data[0];
   	end
   	FL2:
   	begin
   		cif.dWEN = 1;
-  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
-  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[1];
+  		cif.daddr = {d_table[d_counter[2:0]-1].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
+  		cif.dstore = d_table[d_counter[2:0]-1].dentry[d_counter[3]].data[1];
+      next_dirty = 0;
+      next_v = 0;
+      cache_write = 1;
   	end
   	COUNT:
   	begin
@@ -337,7 +344,7 @@ module dcache (
   	endcase
   end
 
-  assign dcif.dhit = (match0 | match1) && (dcif.dmemREN | dcif.dmemWEN); 
+  assign dcif.dhit = (match0 | match1) && (dcif.dmemREN | dcif.dmemWEN) && state == IDLE; 
 
   assign write_loc = (match0 | match1) ? newdmem.blkoff : curr_set.lru;
   

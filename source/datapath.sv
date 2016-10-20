@@ -62,11 +62,12 @@ module datapath (
 
   word_t forward_m_data;
   word_t forward_w_data;
+  logic ihit_pause;
 
   assign ex_lw = idex.opcode_out == LW;
   assign ex_sw = idex.opcode_out == SW;
   assign reg_match = (cuif.rsel1 == exm.WSel_out || cuif.rsel2 == exm.WSel_out) && exm.WEN_out && exm.WSel_out != '0 && (ex_lw || ex_sw);
-
+  assign ihit_pause = (exm.opcode_out == LW || exm.opcode_out == SW) && dpif.ihit && !dpif.dhit; 
 
   assign huif.ex_rt = idex.rt_out;
   assign huif.ex_rs = idex.rs_out;
@@ -95,7 +96,7 @@ module datapath (
   assign ifid.iHit = dpif.ihit;
   assign ifid.flush = idex.PCSel_out != 2'b11; //FIX WHEN BRANCHING
   //assign ifid.enable = ~huif.ifid_pause;
-  assign ifid.enable = dpif.ihit && !reg_match;
+  assign ifid.enable = dpif.ihit && !reg_match && !ihit_pause;
 
   /******* INSTRUCTION DECODE *********/
 
@@ -125,7 +126,7 @@ module datapath (
   assign idex.pcp4 =  ifid.pcp4_out;
   assign idex.rdat1 =  rfif.rdat1;
   assign idex.rdat2 =  rfif.rdat2;
-  assign idex.iHit = dpif.ihit;
+  assign idex.iHit = dpif.ihit && !ihit_pause;
   assign idex.flush = idex.PCSel_out != 2'b11 || reg_match;
   assign idex.HALT =  cuif.halt;
   assign idex.opcode =  cuif.opcode;
@@ -179,7 +180,7 @@ module datapath (
   assign exm.WEN = idex.regWrite_out;
   assign exm.pcp4 = idex.pcp4_out;
   assign exm.wdatasrc = idex.wDataSrc_out;
-  assign exm.iHit = dpif.ihit;
+  assign exm.iHit = dpif.ihit && !ihit_pause;
   assign exm.dHit = dpif.dhit;
   assign exm.flush = dpif.dhit;
   assign exm.HALT = idex.HALT_out;

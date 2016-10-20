@@ -49,15 +49,15 @@ module icache (
   begin
   	curr_entry = i_table[new_imemaddr.idx]; //save some chars
   	dcif.imemload = curr_entry.data;
-  	cif.iaddr = curr_entry.data;
+  	cif.iaddr = dcif.imemaddr; //I changed this
   	if(curr_entry.v && curr_entry.tag == new_imemaddr.tag)
   	begin
-  		dcif.ihit = dcif.imemREN;
+  		dcif.ihit = 1; //and this 
   		cif.iREN = 0;
   	end
   	else
   	begin
-  		cif.iREN = dcif.imemREN;
+  		cif.iREN = 1;
   		dcif.ihit = 0;
   	end
   end

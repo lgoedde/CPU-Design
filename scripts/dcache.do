@@ -149,31 +149,29 @@ add wave -noupdate -group ICACHE /system_tb/DUT/CPU/CM/ICACHE/nRST
 add wave -noupdate -group ICACHE /system_tb/DUT/CPU/CM/ICACHE/i_table
 add wave -noupdate -group ICACHE /system_tb/DUT/CPU/CM/ICACHE/new_imemaddr
 add wave -noupdate -group ICACHE /system_tb/DUT/CPU/CM/ICACHE/curr_entry
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/CLK
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/nRST
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/d_table
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/state
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_state
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_v
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_dirty
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_lru
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/cache_write
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_data1
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_data2
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_tag
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/newdmem
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/curr_set
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/match0
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/match1
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/d_counter
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_d_counter
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/hit_count
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_hit
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/miss_count
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_miss
-add wave -noupdate -expand -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/write_loc
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/CLK
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/nRST
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/d_table
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/state
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_state
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_v
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_dirty
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_lru
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/cache_write
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_data1
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_data2
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_tag
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/newdmem
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/curr_set
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/match0
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/match1
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/d_counter
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/next_d_counter
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/hit_count
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/miss_count
+add wave -noupdate -group DCACHE /system_tb/DUT/CPU/CM/DCACHE/write_loc
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {2860007187 ps} 0}
+WaveRestoreCursors {{Cursor 1} {14645978 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -189,4 +187,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {650176516 ps} {656811763 ps}
+WaveRestoreZoom {14614082 ps} {15358786 ps}
