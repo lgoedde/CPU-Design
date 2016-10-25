@@ -7,8 +7,8 @@
 
 module dcache (
   input logic CLK, nRST,
-  datapath_cache_if.cache dcif,
-  caches_if cif
+  datapath_cache_if.dcache dcif,
+  caches_if.dcache cif
 );
 
   import cpu_types_pkg::*;
@@ -53,7 +53,7 @@ module dcache (
   assign match1 = curr_set.dentry[1].v && (curr_set.dentry[1].tag == newdmem.tag);
 
   //need a counter to find dirty bits on halt
-  logic[3:0]d_counter, next_d_counter;
+  logic[4:0]d_counter, next_d_counter;
 
   //hit counters
   word_t hit_count, next_hit, miss_count, next_miss;
@@ -77,7 +77,8 @@ module dcache (
   		state <= next_state;
       d_counter <= next_d_counter;
       miss_count <= next_miss;
-      hit_count <= next_hit;
+      if(dcif.dhit)
+        hit_count <= hit_count + 1;
 
       if(cache_write)
       begin
@@ -129,7 +130,7 @@ module dcache (
   	WB2:
   	begin
   		if(cif.dwait)
-  			next_state = WB1;
+  			next_state = WB2;
   		else
   			next_state = LD1;
   	end
@@ -152,7 +153,7 @@ module dcache (
   	
   	CD:
   	begin
-  		if(d_counter == 4'b1111)
+  		if(d_counter == 5'b10000)
   			next_state = COUNT;
 
   		else if(d_table[d_counter[2:0]].dentry[d_counter[3]].dirty)
@@ -178,9 +179,10 @@ module dcache (
   	begin
   		if(cif.dwait)
   			next_state = FL2;
-  		else
+  		else begin
   			next_state = CD;
         next_d_counter = d_counter + 1;
+      end
   	end
   	
   	COUNT:
@@ -219,8 +221,8 @@ module dcache (
     cache_write = 0;
     next_data1 = curr_set.dentry[write_loc].data[0];
     next_data2 = curr_set.dentry[write_loc].data[1];
-    //next_tag = curr_set.dentry[write_loc].tag;
-    next_hit = hit_count;
+    next_tag = curr_set.dentry[write_loc].tag;
+    // next_hit = hit_count;
     next_miss = miss_count;
 
   	casez(state)
@@ -231,7 +233,7 @@ module dcache (
         cache_write = 1;
         next_lru = 1;
         dcif.dmemload = d_table[newdmem.idx].dentry[0].data[newdmem.blkoff];
-        next_hit = hit_count + 1;
+        //next_hit = hit_count + 1;
 
       end
       else if(match1 && dcif.dmemREN)
@@ -239,7 +241,7 @@ module dcache (
         cache_write = 1;
         next_lru = 0;
         dcif.dmemload = d_table[newdmem.idx].dentry[1].data[newdmem.blkoff];
-        next_hit = hit_count + 1;
+        //next_hit = hit_count + 1;
 
       end
       else if (match0 && dcif.dmemWEN)
@@ -248,7 +250,7 @@ module dcache (
         next_lru = 1;
         next_v = 1;
         next_dirty = 1;
-        next_hit = hit_count + 1;
+        // next_hit = hit_count + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -260,7 +262,7 @@ module dcache (
         next_lru = 0;
         next_v = 1;
         next_dirty = 1;
-        next_hit = hit_count + 1;
+        // next_hit = hit_count + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -302,7 +304,6 @@ module dcache (
   	begin
   		cif.dREN = 1;
   		cif.daddr = {newdmem.tag, newdmem.idx, 3'b100};
-      next_miss = miss_count + 1;
       if(!cif.dwait) //this may cause some issues
       begin
         next_v = 1;
@@ -310,6 +311,7 @@ module dcache (
         next_dirty = 0;
         next_data2 = cif.dload;
         next_tag = newdmem.tag;
+        next_miss = miss_count + 1;
       end
   	end
   	CD:
@@ -347,6 +349,6 @@ module dcache (
 
   assign dcif.dhit = (match0 | match1) && (dcif.dmemREN | dcif.dmemWEN) && state == IDLE; 
 
-  assign write_loc = (match0 | match1) ? newdmem.blkoff : curr_set.lru;
+  assign write_loc = match0 ? 0 : (match1 ? 1 : curr_set.lru);
   
 endmodule // dcache

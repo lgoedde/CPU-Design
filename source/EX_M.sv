@@ -27,7 +27,21 @@ module EX_M (
 		exm.funct_out <= SLL;
   	end
   	else begin 
-  		if (exm.iHit| exm.dHit)begin //
+  		if (exm.HALT_out) begin
+			exm.dREN_out <= 0;
+			exm.dWEN_out <= 0;
+			exm.dmemStore <= 0;
+			exm.MemtoReg_out <= 0;
+			exm.wdatasrc_out <= 0;
+			exm.portO_out <= 0;
+			exm.WSel_out <= 0;
+			exm.WEN_out <= 0;
+			exm.pcp4_out <= 0;
+			exm.HALT_out <= 1;
+			exm.opcode_out <= RTYPE;
+			exm.funct_out <= SLL;
+  		end
+  		else if (exm.iHit| exm.dHit)begin //
   			if(exm.flush == 1) begin
 		  		exm.dREN_out <= 0;
 				exm.dWEN_out <= 0;
