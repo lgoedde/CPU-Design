@@ -152,7 +152,6 @@ module dcache (
   	
   	CD:
   	begin
-      next_d_counter = d_counter + 1;
   		if(d_counter == 4'b1111)
   			next_state = COUNT;
 
@@ -163,6 +162,7 @@ module dcache (
   		else
   		begin
   			next_state = CD;
+        next_d_counter = d_counter + 1;
   		end
   	end
   	
@@ -180,6 +180,7 @@ module dcache (
   			next_state = FL2;
   		else
   			next_state = CD;
+        next_d_counter = d_counter + 1;
   	end
   	
   	COUNT:
@@ -218,7 +219,7 @@ module dcache (
     cache_write = 0;
     next_data1 = curr_set.dentry[write_loc].data[0];
     next_data2 = curr_set.dentry[write_loc].data[1];
-    next_tag = curr_set.dentry[write_loc].tag;
+    //next_tag = curr_set.dentry[write_loc].tag;
     next_hit = hit_count;
     next_miss = miss_count;
 
@@ -230,7 +231,7 @@ module dcache (
         cache_write = 1;
         next_lru = 1;
         dcif.dmemload = d_table[newdmem.idx].dentry[0].data[newdmem.blkoff];
-        next_hit = next_hit + 1;
+        next_hit = hit_count + 1;
 
       end
       else if(match1 && dcif.dmemREN)
@@ -238,7 +239,7 @@ module dcache (
         cache_write = 1;
         next_lru = 0;
         dcif.dmemload = d_table[newdmem.idx].dentry[1].data[newdmem.blkoff];
-        next_hit = next_hit + 1;
+        next_hit = hit_count + 1;
 
       end
       else if (match0 && dcif.dmemWEN)
@@ -247,7 +248,7 @@ module dcache (
         next_lru = 1;
         next_v = 1;
         next_dirty = 1;
-        next_hit = next_hit + 1;
+        next_hit = hit_count + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -259,7 +260,7 @@ module dcache (
         next_lru = 0;
         next_v = 1;
         next_dirty = 1;
-        next_hit = next_hit + 1;
+        next_hit = hit_count + 1;
         if(newdmem.blkoff)
           next_data2 = dcif.dmemstore;
         else
@@ -301,7 +302,7 @@ module dcache (
   	begin
   		cif.dREN = 1;
   		cif.daddr = {newdmem.tag, newdmem.idx, 3'b100};
-      next_miss = next_miss + 1;
+      next_miss = miss_count + 1;
       if(!cif.dwait) //this may cause some issues
       begin
         next_v = 1;
@@ -318,14 +319,14 @@ module dcache (
   	FL1:
   	begin
   		cif.dWEN = 1;
-  		cif.daddr = {d_table[d_counter[2:0]-1].dentry[d_counter[3]].tag, d_counter[2:0], 3'b000};
-  		cif.dstore = d_table[d_counter[2:0]-1].dentry[d_counter[3]].data[0];
+  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b000};
+  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[0];
   	end
   	FL2:
   	begin
   		cif.dWEN = 1;
-  		cif.daddr = {d_table[d_counter[2:0]-1].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
-  		cif.dstore = d_table[d_counter[2:0]-1].dentry[d_counter[3]].data[1];
+  		cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
+  		cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[1];
       next_dirty = 0;
       next_v = 0;
       cache_write = 1;
