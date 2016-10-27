@@ -13,25 +13,25 @@ then
   echo "Source (No Latency)"
   sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
   grep "LAT =" source/ram.sv | cut -d ',' -f 2
-  testasm $FILES
+  testasm -c $FILES
 
   # Source (Latency)
   echo "Source (Latency)"
   sed -i.bak 's/LAT = [0-9]*/LAT = 7/' source/ram.sv
   grep "LAT =" source/ram.sv | cut -d ',' -f 2
-  testasm $FILES
+  testasm -c $FILES
 
   # Mapped (No Latency)
   echo "Mapped (No Latency)"
   sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
   grep "LAT =" source/ram.sv | cut -d ',' -f 2
-  testasm -s $FILES
+  testasm -c -s $FILES
 
   # Mapped (Latency)
   echo "Mapped (Latency)"
   sed -i.bak 's/LAT = [0-9]*/LAT = 7/' source/ram.sv
   grep "LAT =" source/ram.sv | cut -d ',' -f 2
-  testasm -s $FILES
+  testasm -c -s $FILES
 
   # Revert ram.sv back to zero latency
   sed -i.bak 's/LAT = [0-9]*/LAT = 0/' source/ram.sv
@@ -56,7 +56,7 @@ then
     ((index=index+1))
 
     asm $i > /dev/null
-    sim -t > /dev/null
+    sim -c -t > /dev/null
     synthesize -m -d system_fpga > /dev/null
 
     printf "%-$(echo $padding)s"
@@ -92,7 +92,7 @@ then
     ((index=index+1))
 
     asm $i > /dev/null
-    sim -t > /dev/null
+    sim -c -t > /dev/null
     synthesize -m -d system_fpga > /dev/null
 
     printf "%-$(echo $padding)s"
