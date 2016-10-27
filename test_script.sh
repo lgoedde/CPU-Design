@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# wtf is going on
 MODULE=system
 ASMDIR=asmFiles
 TARGETS=$ASMDIR/*
