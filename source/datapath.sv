@@ -14,7 +14,6 @@
 `include "register_file_if.vh"
 `include "request_if.vh"
 
-
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
 
@@ -228,5 +227,8 @@ module datapath (
         dpif.halt <= exm.HALT_out|dpif.halt;
     end
   end
+
+  // pc init
+  parameter PC_INIT = 0;
 
 endmodule

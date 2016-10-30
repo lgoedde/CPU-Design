@@ -5,7 +5,6 @@
   this block holds the i and d cache
 */
 
-
 // interfaces
 `include "datapath_cache_if.vh"
 `include "caches_if.vh"
@@ -45,6 +44,20 @@ module caches (
     end
   end
   // dcache invalidate before halt
+=======
+module caches (
+  input logic CLK, nRST,
+  datapath_cache_if.cache dcif,
+  caches_if cif
+);
+
+  // icache
+  //icache  ICACHE(dcif, cif);
+  // dcache
+  //dcache  DCACHE(dcif, cif);
+
+  // dcache invalidate before halt handled by dcache when exists
+>>>>>>> a7765470a917fdb1f7532931c68a899dbf227793
   assign dcif.flushed = dcif.halt;
 
   //singlecycle
@@ -61,5 +74,7 @@ module caches (
   assign cif.iaddr = dcif.imemaddr;
   assign cif.daddr = dcif.dmemaddr;
 
+<<<<<<< HEAD
 */
+
 endmodule

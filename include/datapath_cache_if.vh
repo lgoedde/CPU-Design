@@ -67,6 +67,7 @@ interface datapath_cache_if;
             datomic, dmemstore, dmemaddr,
     input  dhit, dmemload, flushed
   );
+
 endinterface
 
 `endif //DATAPATH_CACHE_IF_VH

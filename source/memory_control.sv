@@ -99,5 +99,4 @@ module memory_control (
     endcase
   
   end
-
 endmodule
