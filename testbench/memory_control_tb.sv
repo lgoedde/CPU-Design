@@ -20,9 +20,9 @@ module memory_control_tb;
   caches_if cif0();
   caches_if cif1();
   cpu_ram_if ramif();
-  cache_control_if #(.CPUS(1)) ccif (cif0, cif1);
+  cache_control_if #(.CPUS(2)) ccif (cif0, cif1);
   // test program
-  test PROG (CLK, nRST, cif0);
+  test PROG (CLK, nRST, cif0, cif1);
   // DUT
   
   `ifndef MAPPED
@@ -73,59 +73,170 @@ endmodule
 program test(
   input logic CLK, 
   output logic nRST,
-  caches_if tbif
+  caches_if tbif0,
+  caches_if tbif1
 );
   import cpu_types_pkg::*;
   parameter PERIOD = 10;
   initial begin
-
-    //Test a write
-    tbif.dstore = 32'hFFFFFFFF;
-    tbif.daddr = 32'h00000100;
-    tbif.iaddr = 32'h00000000;
+    nRST = 0;
+    #(PERIOD)
     nRST = 1;
-    tbif.dWEN = 0;
-    tbif.dREN = 0;
-    tbif.iREN = 0;
+    #(PERIOD)
+
+    //WRITE AND WRITE
+    tbif0.ccwrite = 0;
+    tbif0.cctrans = 1;
+    tbif0.dstore = 50;
+    tbif0.daddr = 32'hBAEBAEEE;
+    tbif0.dWEN = 1;
+    tbif0.dREN = 0;
+
+    tbif1.ccwrite = 0;
+    tbif1.cctrans = 0;
+    tbif1.dstore = 0;
+    tbif1.daddr = 32'h0;
+    tbif1.dWEN = 0;
+    tbif1.dREN = 0;
     #(PERIOD)
     #(PERIOD)
-    tbif.dWEN = 1;
+    if(tbif0.dstore == ramif.ramstore)
+      $display("PASSED");
+    else
+      $display("FAILED");
+    #(PERIOD)
+
+
+    //WRITE AND WRITE
+    tbif0.ccwrite = 0;
+    tbif0.cctrans = 1;
+    tbif0.dstore = 50;
+    tbif0.daddr = 32'hBAEBAEEE;
+    tbif0.dWEN = 1;
+    tbif0.dREN = 0;
+
+    tbif1.ccwrite = 0;
+    tbif1.cctrans = 1;
+    tbif1.dstore = 30;
+    tbif1.daddr = 32'hBAEBAEEE;
+    tbif1.dWEN = 1;
+    tbif1.dREN = 0;
     #(PERIOD)
     #(PERIOD)
 
-    //Test a read from what we just wrote
-    tbif.dWEN = 0;
-    tbif.dREN = 1;
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    tbif0.ccwrite = 0;
+    tbif0.cctrans = 0;
+    tbif0.dstore = 0;
+    tbif0.daddr = 32'hBAEBAEEE;
+    tbif0.dWEN = 0;
+    tbif0.dREN = 1;
+
+    tbif1.ccwrite = 1;
+    tbif1.cctrans = 1;
+    tbif1.dstore = 45;
+    tbif1.daddr = 32'hBAEBAEEE;
+    tbif1.dWEN = 0;
+    tbif1.dREN = 1;
+
+
+    #(PERIOD)
+    #(PERIOD)
+    tbif1.cctrans = 0;
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
     #(PERIOD)
     #(PERIOD)
 
-    //Test another write for good measure
-    tbif.dWEN = 1;
-    tbif.dREN = 0;
-    tbif.dstore = 32'hBAEBAEEE;
-    tbif.daddr = 32'h00000010;
+
+    tbif0.ccwrite = 0;
+    tbif0.cctrans = 0;
+    tbif0.dstore = 0;
+    tbif0.daddr = 32'hBAEBAEEE;
+    tbif0.dWEN = 0;
+    tbif0.dREN = 1;
+
+    tbif1.ccwrite = 1;
+    tbif1.cctrans = 1;
+    tbif1.dstore = 0;
+    tbif1.daddr = 32'hBAEBAEEE;
+    tbif1.dWEN = 0;
+    tbif1.dREN = 1;
+
+
     #(PERIOD)
     #(PERIOD)
     
-    //Test a instruction and data at same time, should see bae not 0
-    tbif.iREN = 1;
-    tbif.iaddr = 32'h000000005;
-    tbif.dREN = 1; 
-    tbif.dWEN = 0;
     #(PERIOD)
     #(PERIOD)
-
-    //Now test an iREN, should be reading from 5
-    tbif.dREN = 0;
-    tbif.dWEN = 0;
-    tbif.iREN = 0;
+    #(PERIOD)
+    #(PERIOD)
+    tbif1.cctrans = 0;
+    #(PERIOD)
     #(PERIOD)
     #(PERIOD)
 
-    tbif.iREN = 1;
+
+    
+
+
+/*
+    //TRANSFER TO OTHER CACHE
+    tbif0.ccwrite = 1;
+    tbif0.cctrans = 1;
+    tbif0.dstore = 30;
+    tbif0.daddr = 32'hFFFFFFFF;
+    tbif0.dWEN = 1;
+    tbif0.dREN = 0;
+
+    tbif1.ccwrite = 1;
+    tbif1.cctrans = 1;
+    tbif1.dstore = 31;
+    tbif1.daddr = 32'hFFFFFFFF;
+    tbif1.dWEN = 1;
+    tbif1.dREN = 0;
+
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
+    #(PERIOD)
     #(PERIOD)
     #(PERIOD)
 
+    // READ ITTTTTTTTTT
+    tbif0.ccwrite = 0;
+    tbif0.cctrans = 0;
+    tbif0.dstore = 0;
+    tbif0.daddr = 32'hFFFFFFFF;
+    tbif0.dWEN = 0;
+    tbif0.dREN = ;
+
+    tbif1.ccwrite = 0;
+    tbif1.cctrans = 0;
+    tbif1.dstore = 0;
+    tbif1.daddr = 32'hFFFFFFFF;
+    tbif1.dWEN = 0;
+    tbif1.dREN = 1;
+
+
+
+
+
+
+
+   
+    #(PERIOD)
+*/
     //dump_memory();
     $finish;
   end
