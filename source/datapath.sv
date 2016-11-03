@@ -14,7 +14,6 @@
 `include "register_file_if.vh"
 `include "request_if.vh"
 
-
 // alu op, mips op, and instruction type
 `include "cpu_types_pkg.vh"
 
@@ -24,6 +23,9 @@ module datapath (
 );
   // import types
   import cpu_types_pkg::*;
+
+    // pc init
+  parameter PC_INIT = 0;
 
   //interfaces
   alu_if aluif();
@@ -41,7 +43,7 @@ module datapath (
   //build parts
   alu ALU(aluif.alu);
   control_unit CU(cuif.cu);
-  pc PCOUNT(CLK, nRST, pcif.pc);
+  pc #(.PC_INIT(PC_INIT)) PCOUNT(CLK, nRST, pcif.pc);
   register_file REGF(CLK, nRST, rfif.rf);
   IF_ID IFID(CLK,nRST,ifid.if_id);
   ID_EX IDEX(CLK,nRST,idex.id_ex);
@@ -81,9 +83,6 @@ module datapath (
   assign huif.w_wsel = mwb.Wsel_out;
 
   /******* INSTRUCTION FETCH *********/
-
-  //Program Counter
-  parameter PC_INIT = 0;
   
   //program counter
   assign pcif.pcen = dpif.ihit && !reg_match && ihit_pause; 

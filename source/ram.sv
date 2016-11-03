@@ -17,7 +17,6 @@ module ram (input logic CLK, nRST, cpu_ram_if.ram ramif);
 
   parameter BAD = 32'hBAD1BAD1, LAT = 0;
 
-
   logic [3:0]   count;
   ramstate_t    rstate;
   word_t        q, addr = 0;

@@ -2,24 +2,52 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /memory_control_tb/CLK
 add wave -noupdate /memory_control_tb/nRST
-add wave -noupdate /memory_control_tb/PROG/tbif/iwait
-add wave -noupdate /memory_control_tb/PROG/tbif/dwait
-add wave -noupdate /memory_control_tb/PROG/tbif/iREN
-add wave -noupdate /memory_control_tb/PROG/tbif/dREN
-add wave -noupdate /memory_control_tb/PROG/tbif/dWEN
-add wave -noupdate /memory_control_tb/PROG/tbif/iload
-add wave -noupdate /memory_control_tb/PROG/tbif/dload
-add wave -noupdate /memory_control_tb/PROG/tbif/dstore
-add wave -noupdate /memory_control_tb/PROG/tbif/iaddr
-add wave -noupdate /memory_control_tb/PROG/tbif/daddr
-add wave -noupdate /memory_control_tb/ramif/ramREN
-add wave -noupdate /memory_control_tb/ramif/ramWEN
-add wave -noupdate /memory_control_tb/ramif/ramaddr
-add wave -noupdate /memory_control_tb/ramif/ramstore
-add wave -noupdate /memory_control_tb/ramif/ramload
-add wave -noupdate /memory_control_tb/ramif/ramstate
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/ccinv
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/ccsnoopaddr
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/cctrans
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/ccwait
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/ccwrite
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/dREN
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/dWEN
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/daddr
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/dload
+add wave -noupdate -group TBIF0 -radix decimal /memory_control_tb/PROG/tbif0/dstore
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/dwait
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/iREN
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/iaddr
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/iload
+add wave -noupdate -group TBIF0 /memory_control_tb/PROG/tbif0/iwait
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/ccinv
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/ccsnoopaddr
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/cctrans
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/ccwait
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/ccwrite
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/dREN
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/dWEN
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/daddr
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/dload
+add wave -noupdate -group TBIF1 -radix decimal /memory_control_tb/PROG/tbif1/dstore
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/dwait
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/iREN
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/iaddr
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/iload
+add wave -noupdate -group TBIF1 /memory_control_tb/PROG/tbif1/iwait
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/memREN
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/memWEN
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/memaddr
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/memstore
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramREN
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramWEN
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramaddr
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramload
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramstate
+add wave -noupdate -expand -group RAM /memory_control_tb/ramif/ramstore
+add wave -noupdate -expand -group {Mem Control} /memory_control_tb/DUT/CPUS
+add wave -noupdate -expand -group {Mem Control} /memory_control_tb/DUT/curr_cache
+add wave -noupdate -expand -group {Mem Control} /memory_control_tb/DUT/next_state
+add wave -noupdate -expand -group {Mem Control} /memory_control_tb/DUT/state
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {18887 ps} 0}
+WaveRestoreCursors {{Cursor 1} {52552 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100

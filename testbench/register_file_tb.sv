@@ -29,6 +29,8 @@ module register_file_tb;
   register_file_if rfif ();
   // test program
   test PROG (.CLK,.nRST, .tbif(rfif));
+  test PROG ();
+
   // DUT
 `ifndef MAPPED
   register_file DUT(CLK, nRST, rfif);
