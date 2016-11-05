@@ -22,24 +22,30 @@ module memory_control (
   // number of cpus for cc
   parameter CPUS = 2;
 
-  typedef enum logic[3:0] {IDLE, ARB, WB1, WB2, SNOOP, RAMREAD1, RAMREAD2, RAMWRITE1, RAMWRITE2} state_type;
+  typedef enum logic[3:0] {IDLE, INSTR, WB1, WB2, SNOOP, RAMREAD1, RAMREAD2, RAMWRITE1, RAMWRITE2} state_type;
 
   state_type state, next_state;
   logic curr_cache;
+  logic curr_i, next_i;
 
   always_ff @(posedge CLK or negedge nRST)
   begin
     if(~nRST) begin
        state <= IDLE;
        curr_cache <= 0;
+       curr_i <= 0;
     end else begin
-       state <= next_state;
-       if(ccif.cctrans[0])
-          curr_cache <= 0;
-        else if(ccif.cctrans[1])
-          curr_cache <= 1;
-        else
-          curr_cache <= 0;
+      state <= next_state;
+      
+      if(ccif.cctrans[0])
+        curr_cache <= 0;
+      else if(ccif.cctrans[1])
+        curr_cache <= 1;
+      else
+        curr_cache <= 0;
+
+      if(ccif.iwait == 0)
+        curr_i <= next_i;
     end
   end
 
@@ -51,19 +57,21 @@ module memory_control (
     begin
       if(ccif.cctrans[0] || ccif.cctrans[1])
       begin
-        next_state = ARB;
+        next_state = SNOOP;
       end
+      else if(ccif.dWEN && !ccif.cctrans)
+        next_state = WB1;
+      else if(ccif.iREN[0] || ccif.iREN[1])
+        next_state = INSTR;
       else
         next_state = IDLE;
     end
-    ARB:
+    INSTR:
     begin
-      if(ccif.dWEN)
-        next_state = WB1;
-      else if(ccif.dREN)
-        next_state = SNOOP;
+      if(ccif.ramstate == ACCESS)
+        next_state = IDLE;
       else
-        next_state = ARB;
+        next_state = INSTR;
     end
     WB1:
     begin
@@ -130,15 +138,21 @@ module memory_control (
     ccif.ramREN = 0;
     ccif.ramstore = '0;
     ccif.ramaddr = '0; 
+    ccif.iwait = 2'b11;
+    ccif.dwait = 2'b11;
 
     casez(state)
     IDLE:
     begin
       ccif.ccwait = 0;       
     end
-    ARB:
+    INSTR:
     begin
-      ccif.ccwait = 0;
+      ccif.ramREN = ccif.iREN[curr_i];
+      ccif.ramaddr = ccif.iaddr[curr_i];
+      ccif.iload[curr_i] = ccif.ramload; 
+      if(ccif.ramstate == ACCESS)
+        ccif.iwait[curr_i] = 0;
     end
     WB1:
     begin
@@ -147,6 +161,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0; 
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     WB2:
     begin
@@ -156,6 +172,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0; 
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     SNOOP:
     begin
@@ -171,6 +189,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 0;
       ccif.ramREN = 1;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     RAMREAD2:
     begin
@@ -179,6 +199,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 0;
       ccif.ramREN = 1;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     RAMWRITE1:
     begin
@@ -188,6 +210,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     RAMWRITE2:
     begin
@@ -197,13 +221,30 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
 
     end
     endcase
 
   end
 
-  assign ccif.dwait = ccif.ramstate == ACCESS ? '0 : '1;
+  //instruction and data arbitration
+  always_comb
+  begin
+    next_i = curr_i;
+    if(state == IDLE)
+    begin
+      if(ccif.iREN[0] && !ccif.iREN[1])
+        next_i = 1;
+      else if(ccif.iREN[1] && !ccif.iREN[0])
+        next_i = 0;
+      else if(ccif.iREN[0] && ccif.iREN[1])
+        next_i = !curr_i;
+      else
+        next_i = curr_i;      
+    end
+  end
 
   // always_comb 
   // begin
