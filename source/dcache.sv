@@ -31,7 +31,7 @@ module dcache (
   dset_t[7:0] d_table;
 
   //set up the state machine
-  typedef enum logic [3:0] {IDLE, WB1, WB2, LD1, LD2, CD, FL1, FL2, COUNT, HALT} state_type;
+  typedef enum logic [3:0] {IDLE, WB1, WB2, LD1, LD2, CD, FL1, FL2, COUNT, HALT, WAIT, SWB1, SWB2, CACHEUP} state_type;
 
   //Next state stuff
   state_type state, next_state;
@@ -115,6 +115,8 @@ module dcache (
   			else
   				next_state = LD1;
   		end
+      else if(cif.ccwait)
+        next_state = WAIT;
   		else
   			next_state = IDLE;
   	end
@@ -195,8 +197,40 @@ module dcache (
   	
   	HALT:
   	begin
-		next_state = HALT;  	
+		  next_state = HALT;  	
   	end
+
+    WAIT:
+    begin
+      if(cif.ccwait)
+        next_state = WAIT;
+      else if(!cif.ccwait)
+        next_state = IDLE;
+      else if((match0 || match1) && modified) //fix this shit
+
+    end
+    SWB1:
+    begin
+      if(!cif.ccwait)
+        next_state = IDLE;
+      if(!cif.dwait)
+        next_state = SWB2;
+      else if(cif.dwait)
+        next_state = SWB1;
+
+    end
+    SWB2:
+    begin
+      if(cif.dwait)
+        next_state = SWB2;
+      else
+        next_state = IDLE;
+    end
+    CACHEUP:
+    begin
+      next_state = IDLE;
+    end
+
 
   	endcase
 
@@ -343,6 +377,22 @@ module dcache (
   	begin
   		dcif.flushed = 1;
   	end
+    WAIT:
+    begin
+
+    end
+    SWB1:
+    begin
+
+    end
+    SWB2:
+    begin
+
+    end
+    CACHEUP:
+    begin
+
+    end
 
   	endcase
   end

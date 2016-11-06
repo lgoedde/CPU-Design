@@ -1,11 +1,3 @@
-/*
-  Eric Villasenor
-  evillase@gmail.com
-
-  this block is the coherence protocol
-  and artibtration for ram
-*/
-
 // interface include
 `include "cache_control_if.vh"
 
@@ -211,7 +203,7 @@ module memory_control (
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
       if(ccif.ramstate == ACCESS)
-        ccif.dwait[curr_cache] = 0;
+        ccif.dwait = '0;
     end
     RAMWRITE2:
     begin
@@ -222,7 +214,7 @@ module memory_control (
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
       if(ccif.ramstate == ACCESS)
-        ccif.dwait[curr_cache] = 0;
+        ccif.dwait = '0;
 
     end
     endcase
