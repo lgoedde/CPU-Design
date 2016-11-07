@@ -32,25 +32,33 @@ module dcache (
 
   //set up the state machine
   typedef enum logic [3:0] {IDLE, WB1, WB2, LD1, LD2, CD, FL1, FL2, COUNT, HALT, WAIT, SWB1, SWB2, CACHEUP} state_type;
+  typedef enum logic [1:0] {INVALID, SHARED, DUMMY, MODIFIED} msi_type;
 
   //Next state stuff
   state_type state, next_state;
+  msi_type msi0, msi1;
   logic next_v, next_dirty, next_lru, cache_write;
   word_t next_data1, next_data2;
   logic [25:0] next_tag;
 
     //get the shit
-  dcachef_t newdmem;
+  dcachef_t newdmem, newsnoop;
   assign newdmem = dcachef_t'(dcif.dmemaddr);
+  assign newsnoop = dcachef_t'(cif.ccsnoopaddr);
 
   //create a current block to save typing
-  dset_t curr_set;
+  dset_t curr_set, curr_snoop;
   assign curr_set = d_table[newdmem.idx];
+  assign curr_snoop = d_table[newsnoop.idx];
 
   //find matches
-  logic match0, match1;
+  logic match0, match1, smatch0, smatch1;
   assign match0 = curr_set.dentry[0].v && (curr_set.dentry[0].tag == newdmem.tag);
   assign match1 = curr_set.dentry[1].v && (curr_set.dentry[1].tag == newdmem.tag);
+  assign smatch0 = curr_snoop.dentry[0].v && (curr_snoop.dentry[0].tag == newsnoop.tag);
+  assign smatch1 = curr_snoop.dentry[1].v && (curr_snoop.dentry[1].tag == newsnoop.tag);
+  assign msi0 = msi_type'({curr_snoop.dentry[0].v, curr_snoop.dentry[0].dirty});
+  assign msi1 = msi_type'({curr_snoop.dentry[1].v, curr_snoop.dentry[1].dirty});
 
   //need a counter to find dirty bits on halt
   logic[4:0]d_counter, next_d_counter;
@@ -106,7 +114,7 @@ module dcache (
         next_state = CD;
   		else if(!(dcif.dmemWEN | dcif.dmemREN))
   		begin
-  			next_state = IDLE;
+  			next_state = IDLE;         
   		end
   		else if(!match0 && !match1)
   		begin
@@ -125,6 +133,8 @@ module dcache (
   	begin
   		if(cif.dwait)
   			next_state = WB1;
+      else if(cif.ccwait)
+        next_state = WAIT;
   		else
   			next_state = WB2;
   	end
@@ -141,6 +151,8 @@ module dcache (
   	begin
   		if(cif.dwait)
   			next_state = LD1;
+      else if(cif.ccwait)
+        next_state = WAIT;
   		else
   			next_state = LD2;
   	end
@@ -158,6 +170,9 @@ module dcache (
   		if(d_counter == 5'b10000)
   			next_state = COUNT;
 
+      else if(cif.ccwait)
+        next_state = WAIT;
+
   		else if(d_table[d_counter[2:0]].dentry[d_counter[3]].dirty)
   		begin
   			next_state = FL1;
@@ -173,6 +188,8 @@ module dcache (
   	begin
   		if(cif.dwait)
   			next_state = FL1;
+      else if(cif.ccwait)
+        next_state = WAIT;
   		else
   			next_state = FL2;
   	end
@@ -203,11 +220,19 @@ module dcache (
     WAIT:
     begin
       if(cif.ccwait)
+      begin
         next_state = WAIT;
+        cif.cctrans = 1;
+        cif.ccwrite = 0;
+      end
       else if(!cif.ccwait)
         next_state = IDLE;
-      else if((match0 || match1) && modified) //fix this shit
-
+      else if((smatch0 && msi0 == MODIFIED) || (smatch1 && msi1 == MODIFIED))
+      begin
+        next_state = SWB1;
+        cif.ccwrite = 1;
+        cif.cctrans = 1;
+      end
     end
     SWB1:
     begin
@@ -278,7 +303,7 @@ module dcache (
         //next_hit = hit_count + 1;
 
       end
-      else if (match0 && dcif.dmemWEN)
+      else if (match0 && dcif.dmemWEN && )
       begin
         cache_write = 1;
         next_lru = 1;
@@ -391,13 +416,36 @@ module dcache (
     end
     CACHEUP:
     begin
-
+      if (match0 && dcif.dmemWEN)
+      begin
+        cache_write = 1;
+        next_lru = 1;
+        next_v = 1;
+        next_dirty = 1;
+        // next_hit = hit_count + 1;
+        if(newdmem.blkoff)
+          next_data2 = dcif.dmemstore;
+        else
+          next_data1 = dcif.dmemstore;
+      end
+      if (match1 && dcif.dmemWEN)
+      begin
+        cache_write = 1;
+        next_lru = 0;
+        next_v = 1;
+        next_dirty = 1;
+        // next_hit = hit_count + 1;
+        if(newdmem.blkoff)
+          next_data2 = dcif.dmemstore;
+        else
+          next_data1 = dcif.dmemstore;
+      end
     end
 
   	endcase
   end
 
-  assign dcif.dhit = (match0 | match1) && (dcif.dmemREN | dcif.dmemWEN) && state == IDLE; 
+  //assign dcif.dhit = (match0 | match1) && (dcif.dmemREN | dcif.dmemWEN) && state == IDLE; 
 
   assign write_loc = match0 ? 0 : (match1 ? 1 : curr_set.lru);
   
