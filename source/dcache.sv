@@ -267,8 +267,8 @@ module dcache (
   	cif.dWEN = 0;
   	cif.daddr = '0;
   	cif.dREN = 0;
-  	cif.ccwrite = 0;
-  	cif.cctrans = 0;
+  	//cif.ccwrite = 0;
+  	//cif.cctrans = 0;
   	cif.dstore = '0;
 
   	dcif.dmemload = 0;
@@ -303,7 +303,7 @@ module dcache (
         //next_hit = hit_count + 1;
 
       end
-      else if (match0 && dcif.dmemWEN && )
+      else if (match0 && dcif.dmemWEN)
       begin
         cache_write = 1;
         next_lru = 1;
@@ -416,30 +416,7 @@ module dcache (
     end
     CACHEUP:
     begin
-      if (match0 && dcif.dmemWEN)
-      begin
-        cache_write = 1;
-        next_lru = 1;
-        next_v = 1;
-        next_dirty = 1;
-        // next_hit = hit_count + 1;
-        if(newdmem.blkoff)
-          next_data2 = dcif.dmemstore;
-        else
-          next_data1 = dcif.dmemstore;
-      end
-      if (match1 && dcif.dmemWEN)
-      begin
-        cache_write = 1;
-        next_lru = 0;
-        next_v = 1;
-        next_dirty = 1;
-        // next_hit = hit_count + 1;
-        if(newdmem.blkoff)
-          next_data2 = dcif.dmemstore;
-        else
-          next_data1 = dcif.dmemstore;
-      end
+  
     end
 
   	endcase
