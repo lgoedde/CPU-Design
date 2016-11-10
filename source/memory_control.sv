@@ -136,7 +136,7 @@ module memory_control (
     ccif.ramaddr = '0; 
     ccif.iwait = 2'b11;
     ccif.dwait = 2'b11;
-
+    next_cache = curr_cache;
     next_i = curr_i;
 
     casez(state)
