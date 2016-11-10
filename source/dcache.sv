@@ -180,11 +180,10 @@ module dcache (
   	
   	CD:
   	begin
-  		if(d_counter == 5'b10000)
-  			next_state = HALT;
-
-      else if(cif.ccwait)
+      if(cif.ccwait)
         next_state = WAIT;
+  		else if(d_counter == 5'b10000)
+  			next_state = HALT;     
 
   		else if(d_table[d_counter[2:0]].dentry[d_counter[3]].dirty)
   		begin
@@ -199,11 +198,11 @@ module dcache (
   	
   	FL1:
   	begin
-  		if(cif.dwait)
-  			next_state = FL1;
-      else if(cif.ccwait)
+      if(cif.ccwait)
         next_state = WAIT;
-  		else
+  		else if(cif.dwait)
+  			next_state = FL1;
+      else
   			next_state = FL2;
   	end
   	
