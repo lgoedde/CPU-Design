@@ -65,7 +65,7 @@ module dcache (
   word_t hit_count, next_hit, miss_count, next_miss;
 
   //So we know where to write
-  logic write_loc;
+  logic write_loc, swrite_loc;
 
 
   always_ff @(posedge CLK or negedge nRST)
@@ -86,24 +86,27 @@ module dcache (
       if(dcif.dhit)
         hit_count <= hit_count + 1;
 
-      if(cache_write && state == WAIT)
+      if(cache_write)
       begin
-        d_table[newsnoop.idx].dentry[write_loc].v <= next_v;
-        d_table[newsnoop.idx].dentry[write_loc].dirty <= next_dirty;
-        d_table[newsnoop.idx].dentry[write_loc].tag <= next_tag;
-        d_table[newsnoop.idx].dentry[write_loc].data[0] <= next_data1;
-        d_table[newsnoop.idx].dentry[write_loc].data[1] <= next_data2;
-        d_table[newsnoop.idx].lru = next_lru;
-      end    
-      else if(cache_write)
-      begin
-        d_table[newdmem.idx].dentry[write_loc].v <= next_v;
-        d_table[newdmem.idx].dentry[write_loc].dirty <= next_dirty;
-        d_table[newdmem.idx].dentry[write_loc].tag <= next_tag;
-        d_table[newdmem.idx].dentry[write_loc].data[0] <= next_data1;
-        d_table[newdmem.idx].dentry[write_loc].data[1] <= next_data2;
-        d_table[newdmem.idx].lru = next_lru;
-      end  
+        if(state == WAIT && !cif.ccwrite)
+        begin
+          d_table[newsnoop.idx].dentry[swrite_loc].v <= next_v;
+          d_table[newsnoop.idx].dentry[swrite_loc].dirty <= next_dirty;
+          d_table[newsnoop.idx].dentry[swrite_loc].tag <= next_tag;
+          d_table[newsnoop.idx].dentry[swrite_loc].data[0] <= next_data1;
+          d_table[newsnoop.idx].dentry[swrite_loc].data[1] <= next_data2;
+          d_table[newsnoop.idx].lru = next_lru;
+        end
+        else
+        begin
+          d_table[newdmem.idx].dentry[write_loc].v <= next_v;
+          d_table[newdmem.idx].dentry[write_loc].dirty <= next_dirty;
+          d_table[newdmem.idx].dentry[write_loc].tag <= next_tag;
+          d_table[newdmem.idx].dentry[write_loc].data[0] <= next_data1;
+          d_table[newdmem.idx].dentry[write_loc].data[1] <= next_data2;
+          d_table[newdmem.idx].lru = next_lru;
+        end
+      end     
   	end
   end
 
@@ -496,6 +499,7 @@ module dcache (
 
   assign dcif.dhit = ((match0 | match1) && (dcif.dmemREN || dcif.dmemWEN)) || ((match0 && curr_set.dentry[0].dirty&& dcif.dmemWEN) || (match1 && curr_set.dentry[1].dirty && dcif.dmemWEN));
 
-  assign write_loc = (state == WAIT) ? (smatch0 ? 0 : smatch1 ? 1 : 0) : match0 ? 0 : (match1 ? 1 : curr_set.lru);
+  assign write_loc = match0 ? 0 : (match1 ? 1 : curr_set.lru);
+  assign swrite_loc = smatch0 ? 0 : smatch1 ? 1 : 0; 
   
 endmodule // dcache
