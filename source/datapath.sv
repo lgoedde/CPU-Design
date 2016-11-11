@@ -196,6 +196,7 @@ module datapath (
    assign dpif.dmemWEN = exm.dWEN_out;
   assign dpif.dmemstore = exm.dmemStore;
   assign dpif.dmemaddr = exm.portO_out;
+  assign dpif.datomic = cuif.datomic;  
 
   //Interface
   assign mwb.dmemLoad = dpif.dmemload;
