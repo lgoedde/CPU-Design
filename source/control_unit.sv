@@ -44,6 +44,7 @@ begin
 	cuif.regWrite = 1;
 	cuif.wdataSrc = 0; // 1 when w data is npc
 	// aluSrc is 1 when immediate value is loaded into op2 of alu
+	cuif.datomic = 0; //1 when op is LL or SC 
 			
 	casez(cuif.instr[31:26]) 
 		RTYPE : begin
@@ -309,10 +310,27 @@ begin
 			cuif.immediate = signExtendImm;
 		end
 		LL : begin
+			cuif.datomic = 1;
+			cuif.dREN = 1;
+			cuif.memtoReg = 1;
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = 0;
+			cuif.wsel = itypeInstr.rt;
+			cuif.immediate = signExtendImm;
 
 		end
 		SC : begin
-
+			cuif.datomic = 1;
+			cuif.dWEN = 1;
+			cuif.memtoReg = 1;
+			cuif.aluSrc = 1;
+			cuif.ALUop = ALU_ADD;
+			cuif.rsel1 = itypeInstr.rs;
+			cuif.rsel2 = itypeInstr.rt;
+			cuif.wsel = 0;
+			cuif.immediate = signExtendImm;
 		end
 		HALT : begin
 			cuif.halt = 1;
