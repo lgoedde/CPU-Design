@@ -25,6 +25,7 @@ interface control_unit_if;
   logic   branchSel;  //Look at zero flag or inverse zero flag
   logic   memtoReg;   //1 if register file stores from cache
   logic   aluSrc;     //1 if using immedate for second operand
+  logic   datomic; //used for ll and sc operations
   aluop_t ALUop;   
   regbits_t rsel1;
   regbits_t rsel2;
@@ -40,7 +41,7 @@ interface control_unit_if;
   modport cu (
     input   instr,
     output  dREN,dWEN,halt,PCSel,branch,branchSel,memtoReg,
-            aluSrc,ALUop,rsel1,rsel2,wsel,regWrite,immediate, wdataSrc,opcode,funct
+            aluSrc,ALUop,rsel1,rsel2,wsel,regWrite,immediate, wdataSrc,opcode,funct,datomic
   );
 
 endinterface
