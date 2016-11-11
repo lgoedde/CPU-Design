@@ -1,11 +1,3 @@
-/*
-  Eric Villasenor
-  evillase@gmail.com
-
-  this block is the coherence protocol
-  and artibtration for ram
-*/
-
 // interface include
 `include "cache_control_if.vh"
 
@@ -22,24 +14,24 @@ module memory_control (
   // number of cpus for cc
   parameter CPUS = 2;
 
-  typedef enum logic[3:0] {IDLE, ARB, WB1, WB2, SNOOP, RAMREAD1, RAMREAD2, RAMWRITE1, RAMWRITE2} state_type;
+  typedef enum logic[3:0] {IDLE, ARB, INSTR, WB1, WB2, SNOOP, RAMREAD1, RAMREAD2, RAMWRITE1, RAMWRITE2} state_type;
 
   state_type state, next_state;
-  logic curr_cache;
+  logic curr_cache, next_cache;
+  logic curr_i, next_i;
 
   always_ff @(posedge CLK or negedge nRST)
   begin
     if(~nRST) begin
        state <= IDLE;
        curr_cache <= 0;
+       curr_i <= 0;
     end else begin
-       state <= next_state;
-       if(ccif.cctrans[0])
-          curr_cache <= 0;
-        else if(ccif.cctrans[1])
-          curr_cache <= 1;
-        else
-          curr_cache <= 0;
+      state <= next_state;
+      curr_cache <= next_cache;
+
+      if(ccif.iwait[0] == 0 || ccif.iwait[1] == 0)
+        curr_i <= next_i;
     end
   end
 
@@ -53,6 +45,9 @@ module memory_control (
       begin
         next_state = ARB;
       end
+      
+      else if(ccif.iREN[0] || ccif.iREN[1])
+        next_state = INSTR;
       else
         next_state = IDLE;
     end
@@ -65,6 +60,13 @@ module memory_control (
       else
         next_state = ARB;
     end
+    INSTR:
+    begin
+      if(ccif.ramstate == ACCESS)
+        next_state = IDLE;
+      else
+        next_state = INSTR;
+    end
     WB1:
     begin
       if(ccif.ramstate == ACCESS)
@@ -81,9 +83,9 @@ module memory_control (
     end
     SNOOP:
     begin
-      if(ccif.ccwrite[!curr_cache])
+      if(ccif.ccwrite[!curr_cache] && ccif.cctrans[!curr_cache])
         next_state = RAMWRITE1;
-      else if(!ccif.ccwrite[!curr_cache])
+      else if(!ccif.ccwrite[!curr_cache] && ccif.cctrans[!curr_cache])
         next_state = RAMREAD1;
       else
         next_state = SNOOP;
@@ -120,9 +122,11 @@ module memory_control (
 
   end
 
+  assign ccif.ccsnoopaddr[0] = ccif.daddr[1];
+  assign ccif.ccsnoopaddr[1] = ccif.daddr[0];
+
   always_comb
   begin
-    ccif.ccsnoopaddr = '0;
     ccif.dload = '0;
     ccif.ccinv = 0;
     ccif.ccwait = 0;
@@ -130,15 +134,57 @@ module memory_control (
     ccif.ramREN = 0;
     ccif.ramstore = '0;
     ccif.ramaddr = '0; 
+    ccif.iwait = 2'b11;
+    ccif.dwait = 2'b11;
+    next_cache = curr_cache;
+    next_i = curr_i;
 
     casez(state)
     IDLE:
     begin
-      ccif.ccwait = 0;       
+      ccif.ccwait = 0;  
+      if(ccif.cctrans[0] || ccif.dWEN[0])
+        next_cache = 0;
+      else if(ccif.cctrans[1] || ccif.dWEN[1])
+        next_cache = 1;
+      else
+        next_cache = curr_cache;
+
     end
     ARB:
     begin
-      ccif.ccwait = 0;
+      //Nothing gets set here
+    end
+    INSTR:
+    begin
+      if(ccif.iREN[0] && ccif.iREN[1])
+      begin
+        ccif.ramREN = ccif.iREN[curr_i];
+        ccif.ramaddr = ccif.iaddr[curr_i];
+        ccif.iload[curr_i] = ccif.ramload; 
+        if(ccif.ramstate == ACCESS)
+          ccif.iwait[curr_i] = 0;
+        next_i = !curr_i;
+      end 
+      else if(ccif.iREN[0])
+      begin
+        ccif.ramREN = ccif.iREN[0];
+        ccif.ramaddr = ccif.iaddr[0];
+        ccif.iload[0] = ccif.ramload; 
+        if(ccif.ramstate == ACCESS)
+          ccif.iwait[0] = 0;
+        next_i = curr_i;
+      end
+      else if(ccif.iREN[1])
+      begin
+        ccif.ramREN = ccif.iREN[1];
+        ccif.ramaddr = ccif.iaddr[1];
+        ccif.iload[1] = ccif.ramload; 
+        if(ccif.ramstate == ACCESS)
+          ccif.iwait[1] = 0;
+        next_i = curr_i;
+      end
+
     end
     WB1:
     begin
@@ -147,6 +193,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0; 
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     WB2:
     begin
@@ -156,11 +204,13 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0; 
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     SNOOP:
     begin
       ccif.ccwait[!curr_cache] = 1;
-      ccif.ccsnoopaddr[!curr_cache] = ccif.daddr[curr_cache];
+      
       if(ccif.ccwrite[curr_cache]) //ccwrite goes high: 1. if snoop has a hit and modified 2. if the cache servicing has a dcache hit && sw (S->M)
         ccif.ccinv[!curr_cache] = 1;
     end
@@ -171,6 +221,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 0;
       ccif.ramREN = 1;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait[curr_cache] = 0;
     end
     RAMREAD2:
     begin
@@ -179,6 +231,11 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 0;
       ccif.ramREN = 1;
+      if(ccif.ramstate == ACCESS)
+      begin
+        ccif.dwait[curr_cache] = 0;
+        ccif.ccwait[!curr_cache] = 0;
+      end
     end
     RAMWRITE1:
     begin
@@ -188,6 +245,8 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
+      if(ccif.ramstate == ACCESS)
+        ccif.dwait = '0;
     end
     RAMWRITE2:
     begin
@@ -197,13 +256,28 @@ module memory_control (
       ccif.ramaddr = ccif.daddr[curr_cache];
       ccif.ramWEN = 1;
       ccif.ramREN = 0;
+      if(ccif.ramstate == ACCESS)
+      begin
+        ccif.dwait = '0;
+        ccif.ccwait[!curr_cache] = 0;
+      end
+
 
     end
     endcase
 
   end
 
-  assign ccif.dwait = ccif.ramstate == ACCESS ? '0 : '1;
+  //instruction arbitration
+  // always_comb
+  // begin
+  //   next_i = curr_i; 
+  //   if(state == IDLE)
+  //   begin
+  //     if(ccif.iREN[0] && ccif.iREN[1])
+  //       next_i = !curr_i;            
+  //   end
+  // end
 
   // always_comb 
   // begin
