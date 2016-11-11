@@ -27,6 +27,12 @@ module dcache (
     logic 				lru;
   } dset_t;
 
+  //make the link register
+  typedef struct packed {
+    word_t    address;
+    logic     v;
+  } link_reg;
+
   //make the table
   dset_t[7:0] d_table;
 
@@ -53,8 +59,8 @@ module dcache (
   logic match0, match1, smatch0, smatch1, snoopd0, snoopd1;
   assign match0 = curr_set.dentry[0].v && (curr_set.dentry[0].tag == newdmem.tag);
   assign match1 = curr_set.dentry[1].v && (curr_set.dentry[1].tag == newdmem.tag);
-  assign smatch0 = curr_snoop.dentry[0].v && (curr_snoop.dentry[0].tag == newsnoop.tag);
-  assign smatch1 = curr_snoop.dentry[1].v && (curr_snoop.dentry[1].tag == newsnoop.tag);
+  assign smatch0 = curr_snoop.dentry[0].v && (curr_snoop.dentry[0].tag == newsnoop.tag) && !dcif.flushed;
+  assign smatch1 = curr_snoop.dentry[1].v && (curr_snoop.dentry[1].tag == newsnoop.tag) && !dcif.flushed;
   assign snoopd0 = curr_snoop.dentry[0].dirty;
   assign snoopd1 = curr_snoop.dentry[1].dirty;
 
