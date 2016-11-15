@@ -66,8 +66,8 @@ module datapath (
   word_t forward_w_data;
   logic ihit_pause;
 
-  assign ex_lw = idex.opcode_out == LW;
-  assign ex_sw = idex.opcode_out == SW;
+  assign ex_lw = idex.opcode_out == LW || idex.opcode_out == LL;
+  assign ex_sw = idex.opcode_out == SW || idex.opcode_out == SC;
   assign reg_match = (cuif.rsel1 == exm.WSel_out || cuif.rsel2 == exm.WSel_out) && exm.WEN_out && exm.WSel_out != '0 && (ex_lw || ex_sw);
   assign ihit_pause = !dpif.dmemREN && !dpif.dmemWEN;
 
