@@ -31,7 +31,10 @@ module dcache (
   typedef struct packed {
     word_t    address;
     logic     v;
-  } link_reg;
+  } linkreg_t;
+
+  //make a link reg
+  linkreg_t link_reg, next_link;
 
   //make the table
   dset_t[7:0] d_table;
@@ -81,14 +84,16 @@ module dcache (
   		state <= IDLE;
   		d_table <= '{default: '0};
       d_counter <= 0;
-      miss_count <= '0;
-      hit_count <= '0;
+      //miss_count <= '0;
+      //hit_count <= '0;
+      link_reg <= '{default: '0};
   	end 
   	else
   	begin
   		state <= next_state;
       d_counter <= next_d_counter;
-      miss_count <= next_miss;
+      link_reg <= next_link;
+      //miss_count <= next_miss;
       if(dcif.dhit)
         hit_count <= hit_count + 1;
 
@@ -296,8 +301,9 @@ module dcache (
     next_data1 = curr_set.dentry[write_loc].data[0];
     next_data2 = curr_set.dentry[write_loc].data[1];
     next_tag = curr_set.dentry[write_loc].tag;
+    next_link = link_reg;
     // next_hit = hit_count;
-    next_miss = miss_count;
+    //next_miss = miss_count;
 
   	casez(state)
   	IDLE:
@@ -309,6 +315,12 @@ module dcache (
         dcif.dmemload = d_table[newdmem.idx].dentry[0].data[newdmem.blkoff];
         //next_hit = hit_count + 1;
 
+        if(dcif.datomic)
+        begin
+          next_link.v = 1;
+          next_link.address = dcif.dmemaddr;
+        end
+
       end
       else if(match1 && dcif.dmemREN)
       begin
@@ -317,30 +329,97 @@ module dcache (
         dcif.dmemload = d_table[newdmem.idx].dentry[1].data[newdmem.blkoff];
         //next_hit = hit_count + 1;
 
+        if(dcif.datomic)
+        begin
+          next_link.v = 1;
+          next_link.address = dcif.dmemaddr;
+        end
+
       end
       else if (match0 && dcif.dmemWEN)
       begin
-        cache_write = 1;
-        next_lru = 1;
-        next_v = 1;
-        next_dirty = 1;
-        // next_hit = hit_count + 1;
-        if(newdmem.blkoff)
-          next_data2 = dcif.dmemstore;
+
+        if(dcif.datomic)
+        begin
+          if(link_reg.address == dcif.dmemaddr && link_reg.v)
+          begin
+            //sets rt = 1
+            dcif.dmemload = 1;
+
+            //invalidate the link reg
+            next_link.v = 0;
+
+            //do the regular store
+            cache_write = 1;
+            next_lru = 1;
+            next_v = 1;
+            next_dirty = 1;
+            // next_hit = hit_count + 1;
+            if(newdmem.blkoff)
+              next_data2 = dcif.dmemstore;
+            else
+              next_data1 = dcif.dmemstore;
+          end
+          else
+          begin
+            //set rt = 0 && don't do the sw
+            dcif.dmemload = 0;
+          end
+        end
         else
-          next_data1 = dcif.dmemstore;
+        begin
+          cache_write = 1;
+          next_lru = 1;
+          next_v = 1;
+          next_dirty = 1;
+          // next_hit = hit_count + 1;
+          if(newdmem.blkoff)
+            next_data2 = dcif.dmemstore;
+          else
+            next_data1 = dcif.dmemstore;
+        end
       end
       else if (match1 && dcif.dmemWEN)
       begin
-        cache_write = 1;
-        next_lru = 0;
-        next_v = 1;
-        next_dirty = 1;
-        // next_hit = hit_count + 1;
-        if(newdmem.blkoff)
-          next_data2 = dcif.dmemstore;
+        if(dcif.datomic)
+        begin
+          if(link_reg.address == dcif.dmemaddr && link_reg.v)
+          begin
+            //sets rt = 1
+            dcif.dmemload = 1;
+
+            //invalidate the link reg
+            next_link.v = 0;
+
+            //do the regular store
+            cache_write = 1;
+            next_lru = 0;
+            next_v = 1;
+            next_dirty = 1;
+            // next_hit = hit_count + 1;
+            if(newdmem.blkoff)
+              next_data2 = dcif.dmemstore;
+            else
+              next_data1 = dcif.dmemstore;
+          end
+          else
+          begin
+            //set rt = 0 && don't do the sw
+            dcif.dmemload = 0;
+          end
+        end
         else
-          next_data1 = dcif.dmemstore;
+        begin
+          cache_write = 1;
+          next_lru = 0;
+          next_v = 1;
+          next_dirty = 1;
+          // next_hit = hit_count + 1;
+          if(newdmem.blkoff)
+            next_data2 = dcif.dmemstore;
+          else
+            next_data1 = dcif.dmemstore;
+        end
       end
       else
       begin
@@ -453,7 +532,10 @@ module dcache (
         end
       end
       
-
+      if(dcif.datomic && cif.ccinv && link_reg.address == cif.ccsnoopaddr)
+      begin
+        next_link.v = 0; 
+      end
 
     end
     SWB1:
