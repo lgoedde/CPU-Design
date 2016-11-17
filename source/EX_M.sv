@@ -25,6 +25,7 @@ module EX_M (
 		exm.HALT_out <= 0;
 		exm.opcode_out <= RTYPE;
 		exm.funct_out <= SLL;
+		exm.datomic_out <= 0;
   	end
   	else begin 
   		if (exm.HALT_out) begin
@@ -40,6 +41,7 @@ module EX_M (
 			exm.HALT_out <= 1;
 			exm.opcode_out <= RTYPE;
 			exm.funct_out <= SLL;
+			exm.datomic_out <= 0;
   		end
   		else if (exm.iHit| exm.dHit)begin //
   			if(exm.flush == 1) begin
@@ -55,6 +57,7 @@ module EX_M (
 				exm.HALT_out <= 0;
 				exm.opcode_out <= RTYPE;
 				exm.funct_out <= SLL;
+				exm.datomic_out <= 0;
   			end
   			else begin
 				exm.dWEN_out <= exm.dWEN;
@@ -69,6 +72,7 @@ module EX_M (
 				exm.HALT_out <= exm.HALT;
 				exm.opcode_out <= exm.opcode;
 				exm.funct_out <= exm.funct;
+				exm.datomic_out <= exm.datomic;
 			end
   		end
   	end
