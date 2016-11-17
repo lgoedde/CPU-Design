@@ -132,6 +132,7 @@ module datapath (
   assign idex.funct =  cuif.funct;
   assign idex.rs = cuif.rsel1;
   assign idex.rt = cuif.rsel2;
+  assign idex.datomic = cuif.datomic;
 
 
   /******* EXECUTE INSTRUCTION *********/
@@ -185,6 +186,7 @@ module datapath (
   assign exm.HALT = idex.HALT_out;
   assign exm.opcode = idex.opcode_out;
   assign exm.funct = idex.funct_out;
+  assign exm.datomic = idex.datomic_out;
 
   //forwarding stuff
   assign wdat_mem = exm.wdatasrc_out == 1 ? exm.pcp4_out : exm.MemtoReg_out == 1 ? dpif.dmemload : exm.portO_out;
@@ -196,7 +198,7 @@ module datapath (
    assign dpif.dmemWEN = exm.dWEN_out;
   assign dpif.dmemstore = exm.dmemStore;
   assign dpif.dmemaddr = exm.portO_out;
-  assign dpif.datomic = cuif.datomic;  
+  assign dpif.datomic = exm.datomic_out;  
 
   //Interface
   assign mwb.dmemLoad = dpif.dmemload;
