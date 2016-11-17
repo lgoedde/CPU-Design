@@ -329,7 +329,7 @@ begin
 			cuif.ALUop = ALU_ADD;
 			cuif.rsel1 = itypeInstr.rs;
 			cuif.rsel2 = itypeInstr.rt;
-			cuif.wsel = 0;
+			cuif.wsel = itypeInstr.rt;
 			cuif.immediate = signExtendImm;
 		end
 		HALT : begin
