@@ -25,6 +25,7 @@ interface EX_M_if;
   logic HALT;
   opcode_t opcode;
   funct_t funct;
+  logic datomic;
 
   //Outputs
   logic dREN_out;
@@ -39,12 +40,13 @@ interface EX_M_if;
   logic HALT_out;
   opcode_t opcode_out;
   funct_t funct_out;
+  logic datomic_out;
 
 
 
   modport ex_m (
-    input dREN,dWEN,rdat2,MemtoReg,portO,WSel,WEN,pcp4,wdatasrc,iHit,dHit,flush,HALT,opcode,funct,
-  	output dREN_out,dWEN_out,dmemStore,MemtoReg_out,wdatasrc_out,portO_out,WSel_out,WEN_out,pcp4_out,HALT_out,opcode_out,funct_out
+    input dREN,dWEN,rdat2,MemtoReg,portO,WSel,WEN,pcp4,wdatasrc,iHit,dHit,flush,HALT,opcode,funct, datomic,
+  	output dREN_out,dWEN_out,dmemStore,MemtoReg_out,wdatasrc_out,portO_out,WSel_out,WEN_out,pcp4_out,HALT_out,opcode_out,funct_out, datomic_out
   	);
   
 endinterface 
