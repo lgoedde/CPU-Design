@@ -592,9 +592,9 @@ module dcache (
     endcase
   end
 
-  //assign dcif.dhit = ((match0 | match1) && (dcif.dmemREN)) || ((match0 && curr_set.dentry[0].dirty&& dcif.dmemWEN) || (match1 && curr_set.dentry[1].dirty && dcif.dmemWEN));
+  assign dcif.dhit = ((match0 | match1) && (dcif.dmemREN)) || ((match0 && curr_set.dentry[0].dirty&& dcif.dmemWEN) || (match1 && curr_set.dentry[1].dirty && dcif.dmemWEN)) && state == IDLE;
 
-  assign dcif.dhit = ((match0 | match1) && (dcif.dmemREN || dcif.dmemWEN)) || ((match0 && curr_set.dentry[0].dirty&& dcif.dmemWEN) || (match1 && curr_set.dentry[1].dirty && dcif.dmemWEN));
+  //assign dcif.dhit = ((match0 | match1) && (dcif.dmemREN || dcif.dmemWEN)) || ((match0 && curr_set.dentry[0].dirty&& dcif.dmemWEN) || (match1 && curr_set.dentry[1].dirty && dcif.dmemWEN));
 
   assign write_loc = match0 ? 0 : (match1 ? 1 : curr_set.lru);
   assign swrite_loc = smatch0 ? 0 : smatch1 ? 1 : 0; 
