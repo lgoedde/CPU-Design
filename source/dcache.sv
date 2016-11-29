@@ -103,10 +103,10 @@ module dcache (
         begin
           d_table[newsnoop.idx].dentry[swrite_loc].v <= next_v;
           d_table[newsnoop.idx].dentry[swrite_loc].dirty <= next_dirty;
-          d_table[newsnoop.idx].dentry[swrite_loc].tag <= next_tag;
-          d_table[newsnoop.idx].dentry[swrite_loc].data[0] <= next_data1;
-          d_table[newsnoop.idx].dentry[swrite_loc].data[1] <= next_data2;
-          d_table[newsnoop.idx].lru = next_lru;
+          //d_table[newsnoop.idx].dentry[swrite_loc].tag <= next_tag;
+          //d_table[newsnoop.idx].dentry[swrite_loc].data[0] <= next_data1;
+          //d_table[newsnoop.idx].dentry[swrite_loc].data[1] <= next_data2;
+          //d_table[newsnoop.idx].lru = next_lru;
         end
         else
         begin
@@ -353,7 +353,7 @@ module dcache (
 
             //do the regular store
             cache_write = 1;
-            next_lru = 1;
+            next_lru = 0; //used to be 1
             next_v = 1;
             next_dirty = 1;
             // next_hit = hit_count + 1;
@@ -398,7 +398,7 @@ module dcache (
 
             //do the regular store
             cache_write = 1;
-            next_lru = 0;
+            next_lru = 1; //used to be 0
             next_v = 1;
             next_dirty = 1;
             // next_hit = hit_count + 1;
@@ -437,6 +437,7 @@ module dcache (
     WB1:
     begin
       cif.dWEN = 1;
+      cif.cctrans = 1;
       cif.daddr = {curr_set.dentry[curr_set.lru].tag, newdmem.idx, 3'b000};
       cif.dstore = curr_set.dentry[curr_set.lru].data[0];
       cache_write = 0;
@@ -452,6 +453,7 @@ module dcache (
     begin
       cif.dREN = 1;
       cif.cctrans = 1;
+      next_lru = write_loc;
       if(dcif.dmemWEN)
         cif.ccwrite = 1;
       cif.daddr = {newdmem.tag, newdmem.idx, 3'b000};
@@ -518,6 +520,7 @@ module dcache (
     end
     WAIT:
     begin
+      next_dirty = curr_snoop.dentry[write_loc].dirty;
       cif.cctrans = 1;
       cif.ccwrite = 0;
       if((smatch0 && snoopd0) || (smatch1 && snoopd1))
