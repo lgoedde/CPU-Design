@@ -374,7 +374,7 @@ module dcache (
             next_link.v = 0;
 
           cache_write = dcif.dhit;
-          next_lru = 1;
+          next_lru = 1; //used to be 1
           next_v = 1;
           next_dirty = 1;
           // next_hit = hit_count + 1;
@@ -419,7 +419,7 @@ module dcache (
             next_link.v = 0;
 
           cache_write = dcif.dhit;
-          next_lru = 0;
+          next_lru = 0; //used to be 0
           next_v = 1;
           next_dirty = 1;
           // next_hit = hit_count + 1;
@@ -520,7 +520,7 @@ module dcache (
     end
     WAIT:
     begin
-      next_dirty = curr_snoop.dentry[write_loc].dirty;
+      next_dirty = curr_snoop.dentry[swrite_loc].dirty;
       cif.cctrans = 1;
       cif.ccwrite = 0;
       if((smatch0 && snoopd0) || (smatch1 && snoopd1))
