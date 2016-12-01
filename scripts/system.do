@@ -2,19 +2,19 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate /system_tb/CLK
 add wave -noupdate /system_tb/nRST
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/datomic
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dhit
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dmemREN
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dmemWEN
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dmemaddr
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dmemload
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/dmemstore
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/flushed
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/halt
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/ihit
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/imemREN
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/imemaddr
-add wave -noupdate -expand -group dcif0 /system_tb/DUT/CPU/dcif0/imemload
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/datomic
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dhit
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dmemREN
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dmemWEN
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dmemaddr
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dmemload
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/dmemstore
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/flushed
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/halt
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/ihit
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/imemREN
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/imemaddr
+add wave -noupdate -group dcif0 /system_tb/DUT/CPU/dcif0/imemload
 add wave -noupdate -group dcif1 /system_tb/DUT/CPU/dcif1/datomic
 add wave -noupdate -group dcif1 /system_tb/DUT/CPU/dcif1/dhit
 add wave -noupdate -group dcif1 /system_tb/DUT/CPU/dcif1/dmemREN
@@ -110,6 +110,7 @@ add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/nRST
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/reg_match
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/wdat_mem
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/wdat_temp
+add wave -noupdate /system_tb/DUT/CPU/DP1/REGF/register
 add wave -noupdate -group CC /system_tb/DUT/CPU/CC/CLK
 add wave -noupdate -group CC /system_tb/DUT/CPU/CC/CPUS
 add wave -noupdate -group CC /system_tb/DUT/CPU/CC/curr_cache
@@ -164,6 +165,7 @@ add wave -noupdate -group ICACHE1 /system_tb/DUT/CPU/CM1/ICACHE/nRST
 add wave -noupdate -group ICACHE1 /system_tb/DUT/CPU/CM1/ICACHE/new_imemaddr
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/CLK
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/cache_write
+add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/link_reg
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/curr_set
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/curr_snoop
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/d_counter
@@ -188,8 +190,8 @@ add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/snoopd1
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/state
 add wave -noupdate -group DCACHE1 /system_tb/DUT/CPU/CM1/DCACHE/write_loc
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {2022379 ps} 0}
-quietly wave cursor active 1
+WaveRestoreCursors {{Cursor 1} {4080554 ps} 1} {{Cursor 2} {3918205 ps} 0}
+quietly wave cursor active 2
 configure wave -namecolwidth 199
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -204,4 +206,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {2475721 ps}
+WaveRestoreZoom {632546460 ps} {635022180 ps}
