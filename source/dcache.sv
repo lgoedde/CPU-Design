@@ -33,6 +33,8 @@ module dcache (
     logic     v;
   } linkreg_t;
 
+  logic cacheFlushWEN;
+
   //make a link reg
   linkreg_t link_reg, next_link;
 
@@ -117,7 +119,9 @@ module dcache (
           d_table[newdmem.idx].dentry[write_loc].data[1] <= next_data2;
           d_table[newdmem.idx].lru = next_lru;
         end
-      end     
+      end    
+      if(cacheFlushWEN)
+         d_table[d_counter[2:0]].dentry[d_counter[3]].dirty <= 0;
     end
   end
 
@@ -307,6 +311,8 @@ module dcache (
     // next_hit = hit_count;
     //next_miss = miss_count;
 
+
+    cacheFlushWEN = 0;
     casez(state)
     IDLE:
     begin
@@ -500,9 +506,10 @@ module dcache (
       cif.cctrans = 1;
       cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
       cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[1];
-      next_dirty = 0;
-      next_v = 0;
-      cache_write = 1;
+      //next_dirty = 0;
+      //next_v = 0;
+      //cache_write = 1;
+      cacheFlushWEN = 1;
     end
     // COUNT:
     // begin
