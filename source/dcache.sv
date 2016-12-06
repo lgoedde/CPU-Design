@@ -105,10 +105,10 @@ module dcache (
         begin
           d_table[newsnoop.idx].dentry[swrite_loc].v <= next_v;
           d_table[newsnoop.idx].dentry[swrite_loc].dirty <= next_dirty;
-          d_table[newsnoop.idx].dentry[swrite_loc].tag <= next_tag;
-          d_table[newsnoop.idx].dentry[swrite_loc].data[0] <= next_data1;
-          d_table[newsnoop.idx].dentry[swrite_loc].data[1] <= next_data2;
-          d_table[newsnoop.idx].lru = next_lru;
+          //d_table[newsnoop.idx].dentry[swrite_loc].tag <= next_tag;
+          //d_table[newsnoop.idx].dentry[swrite_loc].data[0] <= next_data1;
+          //d_table[newsnoop.idx].dentry[swrite_loc].data[1] <= next_data2;
+          //d_table[newsnoop.idx].lru = next_lru;
         end
         else
         begin
@@ -359,7 +359,7 @@ module dcache (
 
             //do the regular store
             cache_write = 1;
-            next_lru = 1; //used to be 0
+            next_lru = 0; //used to be 1
             next_v = 1;
             next_dirty = 1;
             // next_hit = hit_count + 1;
@@ -404,7 +404,7 @@ module dcache (
 
             //do the regular store
             cache_write = 1;
-            next_lru = 0; //used to be 1
+            next_lru = 1; //used to be 0
             next_v = 1;
             next_dirty = 1;
             // next_hit = hit_count + 1;
@@ -506,10 +506,10 @@ module dcache (
       cif.cctrans = 1;
       cif.daddr = {d_table[d_counter[2:0]].dentry[d_counter[3]].tag, d_counter[2:0], 3'b100};
       cif.dstore = d_table[d_counter[2:0]].dentry[d_counter[3]].data[1];
-      next_dirty = 0;
-      next_v = 0;
-      cache_write = 1;
-      //cacheFlushWEN = 1;
+      //next_dirty = 0;
+      //next_v = 0;
+      //cache_write = 1;
+      cacheFlushWEN = 1;
     end
     // COUNT:
     // begin
@@ -527,7 +527,7 @@ module dcache (
     end
     WAIT:
     begin
-     // next_dirty = curr_snoop.dentry[swrite_loc].dirty;
+      next_dirty = curr_snoop.dentry[swrite_loc].dirty;
       cif.cctrans = 1;
       cif.ccwrite = 0;
       if((smatch0 && snoopd0) || (smatch1 && snoopd1))
