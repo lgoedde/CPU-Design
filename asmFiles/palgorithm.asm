@@ -5,7 +5,7 @@
   ori   $sp, $zero, 0x3ffc  # stack
   ori 	$s0, $zero, dsp 	# load the data stack pointer from memory to temp
  # lw 	$s0, 0($t0)			# the actual data stack pointer
-  ori 	$s1, $zero, 2  	# max number of rand numbers
+  ori 	$s1, $zero, 256  	# max number of rand numbers
   ori 	$s2, $zero, 2		# seed
   jal   mainp0              # go to program
   halt
@@ -13,7 +13,7 @@
 # main function does something ugly but demonstrates beautifully
 mainp0:
   push  $ra                 # save return address
-  
+
 loop256:
   or 	$a0, $zero, $s2     # pass the seed value as first argument
   jal 	crc32				# jump to crc generator to create a rando #
@@ -32,7 +32,7 @@ loop256:
   or 	$s2, $zero, $t3     # update the seed value
   bne 	$s1, $zero, loop256 # go back and do more rand numbers
 
-  
+
   pop   $ra                 # get return address
   jr    $ra                 # return to caller
 
@@ -46,14 +46,14 @@ slock:						#This is the lock register you idiot
   org   0x200               # second processor p1
   ori   $sp, $zero, 0x7ffc  # stack
   ori 	$s0, $zero, dsp 	# load the data stack pointer from memory to temp
-  ori 	$s1, $zero, 2 	# max number of rand numbers
+  ori 	$s1, $zero, 256 	# max number of rand numbers
   jal   mainp1              # go to program
   halt
 
 # main function does something ugly but demonstrates beautifully
 mainp1:
   push  $ra                 # save return address
-  
+
 
 check:
   ori   $a0, $zero, slock   # move lock to arguement register
@@ -63,7 +63,7 @@ check:
   # critical code segment
   lw $t1, 0($s0) 			#load the stack pointer
   ori $t2, $zero, 0x1000	#load default value into reg to check
-  beq $t1, $t2, check    	# keep checking until not empty   
+  beq $t1, $t2, check    	# keep checking until not empty
   # critical code segment
   ori   $a0, $zero, slock   # move lock to arguement register
   jal   unlock              # release the lock
@@ -86,17 +86,17 @@ check:
   lw  $t4, 0($t3)           #load the min value into arguement
   or $a1, $zero, $t4
   or $a0, $zero, $t2       #put the current popped value into other argument
-  jal min 					#jump to min subroutine 
+  jal min 					#jump to min subroutine
   sw $v0, 0($t3)      		#store the result back to min address
-  
+
   #calc max
   ori $t3, $zero, maxnum
   lw  $t4, 0($t3)            #load the max value into arguement
   or $a1, $zero, $t4
   or $a0, $zero, $t2       #put the current popped value into other argument
-  jal max 					#jump to max subroutine 	
+  jal max 					#jump to max subroutine
   sw $v0, 0($t3)      		#store the result back to max address
-  
+
   #calc total
   ori $t3, $zero, avg
   lw  $t4, 0($t3)           #load the min value into arguement
@@ -110,7 +110,7 @@ check:
   #calc avg
   ori $t3, $zero, avg
   lw  $t4, 0($t3)           #load the total value into arguement
-  srl $t4, $t4, 8           #add current number to total 
+  srl $t4, $t4, 8           #add current number to total
   sw $t4, 0($t3)            #store back to avgs address
 
 
@@ -283,5 +283,5 @@ cfw 0x0000
 avg:
 cfw 0x0000
 
- 
+
 
