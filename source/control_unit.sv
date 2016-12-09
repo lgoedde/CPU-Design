@@ -199,7 +199,7 @@ begin
 			cuif.rsel1 = itypeInstr.rs;
 			cuif.rsel2 = itypeInstr.rt;
 			cuif.wsel = 0;
-			cuif.immediate = zeroExtendImm;
+			cuif.immediate = signExtendImm;
 		end
 		BNE : begin
 			cuif.regWrite = 0;
@@ -211,7 +211,7 @@ begin
 			cuif.rsel1 = itypeInstr.rs;
 			cuif.rsel2 = itypeInstr.rt;
 			cuif.wsel = 0;
-			cuif.immediate = zeroExtendImm;
+			cuif.immediate = signExtendImm;
 		end
 		ADDI : begin
 			cuif.aluSrc = 1;
